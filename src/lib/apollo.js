@@ -46,7 +46,7 @@ const apolloClient = new ApolloClient({
   link: authLink.concat(
     new HttpLink({
       uri: GRAPHQL_ENDPOINT,
-      credentials: "include",
+      credentials: "omit",
     })
   ),
   cache: new InMemoryCache(),
