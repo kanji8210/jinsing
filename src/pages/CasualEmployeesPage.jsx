@@ -93,6 +93,16 @@ const SKILL_TYPES = [
   "Other",
 ];
 
+function formatKes(value) {
+  const numericValue = Number(value ?? 0);
+
+  return new Intl.NumberFormat("en-KE", {
+    style: "currency",
+    currency: "KES",
+    maximumFractionDigits: 0,
+  }).format(Number.isFinite(numericValue) ? numericValue : 0);
+}
+
 export default function CasualEmployeesPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -167,64 +177,94 @@ export default function CasualEmployeesPage() {
   };
 
   const workers = data?.workers || [];
+  const activeWorkers = workers.filter((worker) => worker.isActive).length;
+  const tradeMix = new Set(workers.map((worker) => worker.skillType).filter(Boolean)).size;
+  const averageDailyRate =
+    workers.length > 0
+      ? workers.reduce((sum, worker) => sum + Number(worker.dailyRate || 0), 0) / workers.length
+      : 0;
 
   return (
-    <div style={{ padding: "20px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-        <h1 style={{ margin: 0 }}>Casual Employees</h1>
+    <section className="ops-page">
+      <div className="ops-page-header">
+        <div>
+          <p className="section-kicker">Workforce command</p>
+          <h1 className="ops-page-title">Casual Employees</h1>
+          <p className="ops-page-copy">
+            Track labor availability, trade coverage, and daily-rate exposure from a single site operations view.
+          </p>
+        </div>
         <button
+          type="button"
+          className={showForm ? "btn-secondary" : "btn-primary"}
           onClick={() => (showForm ? resetForm() : setShowForm(true))}
-          style={{
-            padding: "8px 16px",
-            backgroundColor: "#1a5490",
-            color: "white",
-            border: "none",
-            borderRadius: "4px",
-            cursor: "pointer",
-            fontSize: "14px",
-          }}
         >
-          {showForm ? "Cancel" : "+ Add Employee"}
+          {showForm ? "Close form" : "+ Add Employee"}
         </button>
       </div>
 
+      <div className="ops-stat-grid">
+        <article className="ops-stat-card">
+          <p className="ops-stat-label">Registered workers</p>
+          <strong className="ops-stat-value">{workers.length}</strong>
+          <span className="ops-stat-note">Labor records in the active roster</span>
+        </article>
+        <article className="ops-stat-card">
+          <p className="ops-stat-label">Active on rotation</p>
+          <strong className="ops-stat-value">{activeWorkers}</strong>
+          <span className="ops-stat-note">Workers currently marked available</span>
+        </article>
+        <article className="ops-stat-card">
+          <p className="ops-stat-label">Average daily rate</p>
+          <strong className="ops-stat-value">{formatKes(averageDailyRate)}</strong>
+          <span className="ops-stat-note">Across {tradeMix} documented trade categories</span>
+        </article>
+      </div>
+
       {showForm && (
-        <div style={{ marginBottom: "20px", padding: "20px", backgroundColor: "#f9f9f9", borderRadius: "4px" }}>
-          <h2 style={{ marginTop: 0 }}>{editingId ? "Edit Employee" : "New Casual Employee"}</h2>
-          <form onSubmit={handleSubmit} style={{ display: "grid", gap: "12px", gridTemplateColumns: "1fr 1fr" }}>
+        <section className="panel panel-spacer ops-form-panel">
+          <div className="panel-head">
+            <div>
+              <p className="section-kicker">Labor profile</p>
+              <h2>{editingId ? "Edit Employee" : "New Casual Employee"}</h2>
+            </div>
+            <span className="chip">Field deployment</span>
+          </div>
+
+          <form onSubmit={handleSubmit} className="ops-form-grid ops-form-grid-two-column">
             <input
               type="text"
               placeholder="Full Name *"
               value={formData.fullName}
               onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
               required
-              style={{ padding: "8px", border: "1px solid #ccc", borderRadius: "4px" }}
+              className="ops-input"
             />
             <input
               type="text"
               placeholder="National ID"
               value={formData.nationalId}
               onChange={(e) => setFormData({ ...formData, nationalId: e.target.value })}
-              style={{ padding: "8px", border: "1px solid #ccc", borderRadius: "4px" }}
+              className="ops-input"
             />
             <input
               type="text"
               placeholder="NSSF Number"
               value={formData.nssfNumber}
               onChange={(e) => setFormData({ ...formData, nssfNumber: e.target.value })}
-              style={{ padding: "8px", border: "1px solid #ccc", borderRadius: "4px" }}
+              className="ops-input"
             />
             <input
               type="text"
               placeholder="NHIF Number"
               value={formData.nhifNumber}
               onChange={(e) => setFormData({ ...formData, nhifNumber: e.target.value })}
-              style={{ padding: "8px", border: "1px solid #ccc", borderRadius: "4px" }}
+              className="ops-input"
             />
             <select
               value={formData.skillType}
               onChange={(e) => setFormData({ ...formData, skillType: e.target.value })}
-              style={{ padding: "8px", border: "1px solid #ccc", borderRadius: "4px" }}
+              className="ops-input"
             >
               {SKILL_TYPES.map((skill) => (
                 <option key={skill} value={skill}>
@@ -238,117 +278,87 @@ export default function CasualEmployeesPage() {
               value={formData.dailyRate}
               onChange={(e) => setFormData({ ...formData, dailyRate: e.target.value })}
               step="0.01"
-              style={{ padding: "8px", border: "1px solid #ccc", borderRadius: "4px" }}
+              className="ops-input"
             />
             <input
               type="tel"
               placeholder="Phone Number"
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              style={{ padding: "8px", border: "1px solid #ccc", borderRadius: "4px" }}
+              className="ops-input"
             />
-            <label style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <label className="ops-checkbox">
               <input
                 type="checkbox"
                 checked={formData.isActive}
                 onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                style={{ width: "16px", height: "16px" }}
               />
               Active
             </label>
-            <button
-              type="submit"
-              style={{
-                gridColumn: "1 / -1",
-                padding: "10px",
-                backgroundColor: "#28a745",
-                color: "white",
-                border: "none",
-                borderRadius: "4px",
-                cursor: "pointer",
-                fontSize: "14px",
-              }}
-            >
+            <button type="submit" className="btn-primary ops-span-full">
               {editingId ? "Update Employee" : "Add Employee"}
             </button>
           </form>
+        </section>
+      )}
+
+      {loading && <p className="projects-state-copy">Loading employees...</p>}
+      {error && (
+        <div className="projects-state-card projects-state-error panel-spacer">
+          <h3>Workforce feed unavailable</h3>
+          <p>{error.message}</p>
         </div>
       )}
 
-      {loading && <p>Loading employees...</p>}
-      {error && <p style={{ color: "red" }}>Error: {error.message}</p>}
-
       {workers.length === 0 && !loading ? (
-        <p style={{ color: "#666" }}>No casual employees registered yet.</p>
+        <div className="empty-state-card panel-spacer">
+          <strong>No casual employees registered yet</strong>
+          <p>Add the first worker to start tracking labor capacity and rate exposure.</p>
+        </div>
       ) : (
-        <div style={{ overflowX: "auto" }}>
-          <table
-            style={{
-              width: "100%",
-              borderCollapse: "collapse",
-              backgroundColor: "white",
-              border: "1px solid #ddd",
-            }}
-          >
+        <div className="ops-table-shell panel-spacer">
+          <table className="ops-table">
             <thead>
-              <tr style={{ backgroundColor: "#f0f0f0", borderBottom: "2px solid #ddd" }}>
-                <th style={{ padding: "12px", textAlign: "left" }}>Name</th>
-                <th style={{ padding: "12px", textAlign: "left" }}>Skill</th>
-                <th style={{ padding: "12px", textAlign: "right" }}>Daily Rate</th>
-                <th style={{ padding: "12px", textAlign: "left" }}>Phone</th>
-                <th style={{ padding: "12px", textAlign: "center" }}>Status</th>
-                <th style={{ padding: "12px", textAlign: "center" }}>Actions</th>
+              <tr>
+                <th>Name</th>
+                <th>Skill</th>
+                <th className="ops-number-col">Daily Rate</th>
+                <th>Phone</th>
+                <th>Status</th>
+                <th className="ops-actions-col">Actions</th>
               </tr>
             </thead>
             <tbody>
               {workers.map((worker) => (
-                <tr key={worker.id} style={{ borderBottom: "1px solid #ddd" }}>
-                  <td style={{ padding: "12px" }}>{worker.fullName}</td>
-                  <td style={{ padding: "12px" }}>{worker.skillType || "-"}</td>
-                  <td style={{ padding: "12px", textAlign: "right" }}>
-                    {worker.dailyRate ? `KES ${parseFloat(worker.dailyRate).toFixed(2)}` : "-"}
+                <tr key={worker.id}>
+                  <td>
+                    <div className="ops-table-primary">
+                      <strong>{worker.fullName}</strong>
+                      <span>{worker.nationalId || "National ID pending"}</span>
+                    </div>
                   </td>
-                  <td style={{ padding: "12px" }}>{worker.phone || "-"}</td>
-                  <td style={{ padding: "12px", textAlign: "center" }}>
-                    <span
-                      style={{
-                        padding: "4px 8px",
-                        borderRadius: "4px",
-                        fontSize: "12px",
-                        backgroundColor: worker.isActive ? "#d4edda" : "#f8d7da",
-                        color: worker.isActive ? "#155724" : "#856404",
-                      }}
-                    >
+                  <td>{worker.skillType || "-"}</td>
+                  <td className="ops-number-col">
+                    {worker.dailyRate ? formatKes(worker.dailyRate) : "-"}
+                  </td>
+                  <td>{worker.phone || "-"}</td>
+                  <td>
+                    <span className={`status-pill ${worker.isActive ? "active" : "inactive"}`}>
                       {worker.isActive ? "Active" : "Inactive"}
                     </span>
                   </td>
-                  <td style={{ padding: "12px", textAlign: "center" }}>
+                  <td className="ops-actions-cell">
                     <button
+                      type="button"
                       onClick={() => handleEdit(worker)}
-                      style={{
-                        marginRight: "8px",
-                        padding: "6px 12px",
-                        backgroundColor: "#007bff",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "4px",
-                        cursor: "pointer",
-                        fontSize: "12px",
-                      }}
+                      className="btn-secondary ops-action-btn"
                     >
                       Edit
                     </button>
                     <button
+                      type="button"
                       onClick={() => handleDelete(worker.id)}
-                      style={{
-                        padding: "6px 12px",
-                        backgroundColor: "#dc3545",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "4px",
-                        cursor: "pointer",
-                        fontSize: "12px",
-                      }}
+                      className="btn-danger ops-action-btn"
                     >
                       Delete
                     </button>
@@ -359,6 +369,6 @@ export default function CasualEmployeesPage() {
           </table>
         </div>
       )}
-    </div>
+    </section>
   );
 }

@@ -143,158 +143,164 @@ export default function SuppliersPage() {
   };
 
   const suppliers = data?.suppliers || [];
+  const suppliersWithTerms = suppliers.filter((supplier) => supplier.paymentTerms).length;
+  const suppliersWithEmail = suppliers.filter((supplier) => supplier.contactEmail).length;
 
   return (
-    <div style={{ padding: "20px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-        <h1 style={{ margin: 0 }}>Suppliers</h1>
+    <section className="ops-page">
+      <div className="ops-page-header">
+        <div>
+          <p className="section-kicker">Supply chain command</p>
+          <h1 className="ops-page-title">Suppliers</h1>
+          <p className="ops-page-copy">
+            Centralize procurement contacts, payment terms, and vendor records in a field-ready command view.
+          </p>
+        </div>
         <button
+          type="button"
+          className={showForm ? "btn-secondary" : "btn-primary"}
           onClick={() => (showForm ? resetForm() : setShowForm(true))}
-          style={{
-            padding: "8px 16px",
-            backgroundColor: "#1a5490",
-            color: "white",
-            border: "none",
-            borderRadius: "4px",
-            cursor: "pointer",
-            fontSize: "14px",
-          }}
         >
-          {showForm ? "Cancel" : "+ New Supplier"}
+          {showForm ? "Close form" : "+ New Supplier"}
         </button>
       </div>
 
+      <div className="ops-stat-grid">
+        <article className="ops-stat-card">
+          <p className="ops-stat-label">Total suppliers</p>
+          <strong className="ops-stat-value">{suppliers.length}</strong>
+          <span className="ops-stat-note">Live vendor records in the system</span>
+        </article>
+        <article className="ops-stat-card">
+          <p className="ops-stat-label">Commercial terms</p>
+          <strong className="ops-stat-value">{suppliersWithTerms}</strong>
+          <span className="ops-stat-note">Profiles with negotiated payment terms</span>
+        </article>
+        <article className="ops-stat-card">
+          <p className="ops-stat-label">Digital contacts</p>
+          <strong className="ops-stat-value">{suppliersWithEmail}</strong>
+          <span className="ops-stat-note">Suppliers ready for documented coordination</span>
+        </article>
+      </div>
+
       {showForm && (
-        <div style={{ marginBottom: "20px", padding: "20px", backgroundColor: "#f9f9f9", borderRadius: "4px" }}>
-          <h2 style={{ marginTop: 0 }}>{editingId ? "Edit Supplier" : "New Supplier"}</h2>
-          <form onSubmit={handleSubmit} style={{ display: "grid", gap: "12px" }}>
+        <section className="panel panel-spacer ops-form-panel">
+          <div className="panel-head">
+            <div>
+              <p className="section-kicker">Supplier profile</p>
+              <h2>{editingId ? "Edit Supplier" : "New Supplier"}</h2>
+            </div>
+            <span className="chip">Vendor onboarding</span>
+          </div>
+
+          <form onSubmit={handleSubmit} className="ops-form-grid">
             <input
               type="text"
               placeholder="Supplier Name *"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               required
-              style={{ padding: "8px", border: "1px solid #ccc", borderRadius: "4px" }}
+              className="ops-input"
             />
             <input
               type="text"
               placeholder="KRA PIN"
               value={formData.kraPin}
               onChange={(e) => setFormData({ ...formData, kraPin: e.target.value })}
-              style={{ padding: "8px", border: "1px solid #ccc", borderRadius: "4px" }}
+              className="ops-input"
             />
             <input
               type="text"
               placeholder="Contact Name"
               value={formData.contactName}
               onChange={(e) => setFormData({ ...formData, contactName: e.target.value })}
-              style={{ padding: "8px", border: "1px solid #ccc", borderRadius: "4px" }}
+              className="ops-input"
             />
             <input
               type="email"
               placeholder="Contact Email"
               value={formData.contactEmail}
               onChange={(e) => setFormData({ ...formData, contactEmail: e.target.value })}
-              style={{ padding: "8px", border: "1px solid #ccc", borderRadius: "4px" }}
+              className="ops-input"
             />
             <input
               type="tel"
               placeholder="Contact Phone"
               value={formData.contactPhone}
               onChange={(e) => setFormData({ ...formData, contactPhone: e.target.value })}
-              style={{ padding: "8px", border: "1px solid #ccc", borderRadius: "4px" }}
+              className="ops-input"
             />
             <input
               type="text"
               placeholder="Payment Terms (e.g., Net 30)"
               value={formData.paymentTerms}
               onChange={(e) => setFormData({ ...formData, paymentTerms: e.target.value })}
-              style={{ padding: "8px", border: "1px solid #ccc", borderRadius: "4px" }}
+              className="ops-input"
             />
             <textarea
               placeholder="Notes"
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              style={{ padding: "8px", border: "1px solid #ccc", borderRadius: "4px", minHeight: "80px" }}
+              className="ops-input ops-textarea ops-span-full"
             />
-            <button
-              type="submit"
-              style={{
-                padding: "10px",
-                backgroundColor: "#28a745",
-                color: "white",
-                border: "none",
-                borderRadius: "4px",
-                cursor: "pointer",
-                fontSize: "14px",
-              }}
-            >
+            <button type="submit" className="btn-primary ops-span-full">
               {editingId ? "Update Supplier" : "Create Supplier"}
             </button>
           </form>
+        </section>
+      )}
+
+      {loading && <p className="projects-state-copy">Loading suppliers...</p>}
+      {error && (
+        <div className="projects-state-card projects-state-error panel-spacer">
+          <h3>Supplier feed unavailable</h3>
+          <p>{error.message}</p>
         </div>
       )}
 
-      {loading && <p>Loading suppliers...</p>}
-      {error && <p style={{ color: "red" }}>Error: {error.message}</p>}
-
       {suppliers.length === 0 && !loading ? (
-        <p style={{ color: "#666" }}>No suppliers yet. Create one to get started.</p>
+        <div className="empty-state-card panel-spacer">
+          <strong>No suppliers yet</strong>
+          <p>Create your first vendor profile to start structuring the supply chain register.</p>
+        </div>
       ) : (
-        <div style={{ overflowX: "auto" }}>
-          <table
-            style={{
-              width: "100%",
-              borderCollapse: "collapse",
-              backgroundColor: "white",
-              border: "1px solid #ddd",
-            }}
-          >
+        <div className="ops-table-shell panel-spacer">
+          <table className="ops-table">
             <thead>
-              <tr style={{ backgroundColor: "#f0f0f0", borderBottom: "2px solid #ddd" }}>
-                <th style={{ padding: "12px", textAlign: "left" }}>Name</th>
-                <th style={{ padding: "12px", textAlign: "left" }}>Contact</th>
-                <th style={{ padding: "12px", textAlign: "left" }}>Email</th>
-                <th style={{ padding: "12px", textAlign: "left" }}>Phone</th>
-                <th style={{ padding: "12px", textAlign: "left" }}>Terms</th>
-                <th style={{ padding: "12px", textAlign: "center" }}>Actions</th>
+              <tr>
+                <th>Name</th>
+                <th>Contact</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Terms</th>
+                <th className="ops-actions-col">Actions</th>
               </tr>
             </thead>
             <tbody>
               {suppliers.map((supplier) => (
-                <tr key={supplier.id} style={{ borderBottom: "1px solid #ddd" }}>
-                  <td style={{ padding: "12px" }}>{supplier.name}</td>
-                  <td style={{ padding: "12px" }}>{supplier.contactName || "-"}</td>
-                  <td style={{ padding: "12px" }}>{supplier.contactEmail || "-"}</td>
-                  <td style={{ padding: "12px" }}>{supplier.contactPhone || "-"}</td>
-                  <td style={{ padding: "12px" }}>{supplier.paymentTerms || "-"}</td>
-                  <td style={{ padding: "12px", textAlign: "center" }}>
+                <tr key={supplier.id}>
+                  <td>
+                    <div className="ops-table-primary">
+                      <strong>{supplier.name}</strong>
+                      <span>{supplier.kraPin || "KRA PIN pending"}</span>
+                    </div>
+                  </td>
+                  <td>{supplier.contactName || "-"}</td>
+                  <td>{supplier.contactEmail || "-"}</td>
+                  <td>{supplier.contactPhone || "-"}</td>
+                  <td>{supplier.paymentTerms || "-"}</td>
+                  <td className="ops-actions-cell">
                     <button
+                      type="button"
                       onClick={() => handleEdit(supplier)}
-                      style={{
-                        marginRight: "8px",
-                        padding: "6px 12px",
-                        backgroundColor: "#007bff",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "4px",
-                        cursor: "pointer",
-                        fontSize: "12px",
-                      }}
+                      className="btn-secondary ops-action-btn"
                     >
                       Edit
                     </button>
                     <button
+                      type="button"
                       onClick={() => handleDelete(supplier.id)}
-                      style={{
-                        padding: "6px 12px",
-                        backgroundColor: "#dc3545",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "4px",
-                        cursor: "pointer",
-                        fontSize: "12px",
-                      }}
+                      className="btn-danger ops-action-btn"
                     >
                       Delete
                     </button>
@@ -305,6 +311,6 @@ export default function SuppliersPage() {
           </table>
         </div>
       )}
-    </div>
+    </section>
   );
 }

@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { gql } from "@apollo/client";
 import { useQuery } from "@apollo/client/react";
 import SidebarNav from "./components/SidebarNav";
+import KpiCards from "./components/KpiCards";
+import PortfolioChart from "./components/PortfolioChart";
 import QuoteForm from "./components/QuoteForm";
 import SuppliersPage from "./pages/SuppliersPage";
 import CasualEmployeesPage from "./pages/CasualEmployeesPage";
@@ -304,6 +306,76 @@ export default function App() {
   const isDemoMode = !loading && !hasLiveProjects;
   const portfolioSummary = getPortfolioSummary(displayProjects);
   const milestoneAlerts = getMilestoneAlerts(displayProjects);
+  const budgetUtilization =
+    portfolioSummary.budgetTotal > 0
+      ? (portfolioSummary.budgetSpent / portfolioSummary.budgetTotal) * 100
+      : 0;
+  const landingKpis = [
+    {
+      label: lang === "en" ? "Active sites" : "进行中的工地",
+      value: `${portfolioSummary.active}`,
+      note:
+        lang === "en"
+          ? `${portfolioSummary.total} tracked programs`
+          : `共跟踪 ${portfolioSummary.total} 个项目`,
+    },
+    {
+      label: lang === "en" ? "Budget burn" : "预算消耗",
+      value: formatPercent(budgetUtilization),
+      note: `${formatCurrency(portfolioSummary.budgetSpent)} / ${formatCurrency(portfolioSummary.budgetTotal)}`,
+    },
+    {
+      label: lang === "en" ? "At-risk packages" : "风险包件",
+      value: `${portfolioSummary.atRisk}`,
+      note:
+        lang === "en"
+          ? "Requires leadership attention"
+          : "需要管理层关注",
+    },
+    {
+      label: lang === "en" ? "Average progress" : "平均进度",
+      value: formatPercent(portfolioSummary.avgProgress),
+      note:
+        lang === "en"
+          ? "Across the full portfolio"
+          : "跨整个项目组合",
+    },
+  ];
+  const operatingSignals = [
+    {
+      label: lang === "en" ? "Response desk" : "响应中心",
+      value: lang === "en" ? "24h" : "24 小时",
+      note:
+        lang === "en"
+          ? "Quotes and commercial clarifications"
+          : "报价与商务澄清",
+    },
+    {
+      label: lang === "en" ? "Field supervision" : "现场监管",
+      value: `${portfolioSummary.active}`,
+      note:
+        lang === "en"
+          ? "Live projects under coordination"
+          : "正在协调的在建项目",
+    },
+    {
+      label: lang === "en" ? "Milestone alerts" : "里程碑预警",
+      value: `${milestoneAlerts.length}`,
+      note:
+        lang === "en"
+          ? "Upcoming or overdue actions"
+          : "即将到期或已逾期事项",
+    },
+    {
+      label: lang === "en" ? "Forecast confidence" : "预测信心",
+      value: portfolioSummary.atRisk > 0 ? "84%" : "93%",
+      note:
+        lang === "en"
+          ? "Budget and delivery alignment"
+          : "预算与交付一致性",
+    },
+  ];
+  const featuredProjects = displayProjects.slice(0, 3);
 
   useEffect(() => {
     const existingToken = getStoredAuthToken();
@@ -514,43 +586,178 @@ export default function App() {
                 </div>
               )}
 
-              <section className="landing-hero panel">
-                <p className="eyebrow">{t.hero.eyebrow}</p>
-                <h1>{t.landing.title}</h1>
-                <p className="hero-subtitle">{t.landing.subtitle}</p>
-                <p className="hero-copy">{t.landing.description}</p>
-                <div className="landing-cta-row">
-                  <button
-                    type="button"
-                    className="cta-btn cta-primary"
-                    onClick={() => setShowQuoteForm(true)}
-                  >
-                    {t.landing.quoteCta}
-                  </button>
-                  <button
-                    type="button"
-                    className="cta-btn cta-secondary"
-                    onClick={() => setActiveNav("settings")}
-                  >
-                    {t.landing.loginCta}
-                  </button>
+              <section className="panel panel-command">
+                <div className="command-hero-grid">
+                  <div className="command-hero-copy">
+                    <p className="eyebrow">{t.hero.eyebrow}</p>
+                    <h1>{t.landing.title}</h1>
+                    <p className="hero-subtitle">{t.landing.subtitle}</p>
+                    <p className="hero-copy">{t.landing.description}</p>
+
+                    <div className="landing-cta-row">
+                      <button
+                        type="button"
+                        className="cta-btn cta-primary"
+                        onClick={() => setShowQuoteForm(true)}
+                      >
+                        {t.landing.quoteCta}
+                      </button>
+                      <button
+                        type="button"
+                        className="cta-btn cta-secondary"
+                        onClick={() => setActiveNav("settings")}
+                      >
+                        {t.landing.loginCta}
+                      </button>
+                    </div>
+
+                    <p className="safe-note">{t.landing.safetyNote}</p>
+
+                    <div className="trust-bar" aria-label={lang === "en" ? "Capabilities" : "能力标签"}>
+                      <span className="trust-pill">{lang === "en" ? "Design-build coordination" : "设计施工协调"}</span>
+                      <span className="trust-pill">{lang === "en" ? "Cost command" : "成本管控"}</span>
+                      <span className="trust-pill">{lang === "en" ? "Field execution" : "现场执行"}</span>
+                    </div>
+                  </div>
+
+                  <aside className="hero-console" aria-label={lang === "en" ? "Operational console" : "运营控制台"}>
+                    <div className="panel-head">
+                      <div>
+                        <p className="console-kicker">{lang === "en" ? "Live command console" : "实时指挥控制台"}</p>
+                        <h2>{lang === "en" ? "Engineering readiness" : "工程准备度"}</h2>
+                      </div>
+                      <span className={`chip ${isDemoMode ? "chip-live" : "chip-success"}`}>
+                        {isDemoMode
+                          ? lang === "en"
+                            ? "Demo telemetry"
+                            : "演示数据"
+                          : lang === "en"
+                            ? "Live telemetry"
+                            : "实时数据"}
+                      </span>
+                    </div>
+
+                    <div className="console-grid">
+                      {operatingSignals.map((item) => (
+                        <article key={item.label} className="console-card">
+                          <p className="console-label">{item.label}</p>
+                          <strong className="console-value">{item.value}</strong>
+                          <span className="console-note">{item.note}</span>
+                        </article>
+                      ))}
+                    </div>
+                  </aside>
                 </div>
-                <p className="safe-note">{t.landing.safetyNote}</p>
               </section>
 
-              <section className="landing-showcase-grid">
-                {t.landing.highlights.map((item) => (
-                  <article key={item.title} className="showcase-card">
-                    <h3>{item.title}</h3>
-                    <p>{item.text}</p>
-                  </article>
-                ))}
+              <KpiCards
+                items={landingKpis}
+                ariaLabel={lang === "en" ? "Portfolio command metrics" : "项目组合指挥指标"}
+              />
+
+              <section className="landing-content-grid panel-spacer">
+                <section className="panel service-column">
+                  <div className="panel-head">
+                    <div>
+                      <p className="section-kicker">{lang === "en" ? "Core offer" : "核心服务"}</p>
+                      <h2>{lang === "en" ? "Engineering delivery, framed as systems" : "以系统化方式交付工程"}</h2>
+                    </div>
+                    <span className="chip">{lang === "en" ? "Premium technical teams" : "专业技术团队"}</span>
+                  </div>
+
+                  <div className="service-card-grid">
+                    {t.landing.highlights.map((item, index) => (
+                      <article key={item.title} className="showcase-card">
+                        <span className="service-index">0{index + 1}</span>
+                        <h3>{item.title}</h3>
+                        <p>{item.text}</p>
+                      </article>
+                    ))}
+                  </div>
+                </section>
+
+                <div className="intel-column">
+                  <section className="panel">
+                    <div className="panel-head">
+                      <div>
+                        <p className="section-kicker">{lang === "en" ? "Action board" : "行动面板"}</p>
+                        <h2>{lang === "en" ? "Milestone pressure points" : "里程碑关键点"}</h2>
+                      </div>
+                      <span className="chip chip-warn">{lang === "en" ? "Two-week horizon" : "两周窗口"}</span>
+                    </div>
+
+                    {milestoneAlerts.length > 0 ? (
+                      <div className="milestone-alert-strip compact">
+                        {milestoneAlerts.slice(0, 4).map((alert) => (
+                          <article
+                            key={`${alert.projectName}-${alert.title}-${alert.dueDate}`}
+                            className={`milestone-alert-card ${alert.daysRemaining < 0 ? "overdue" : "upcoming"}`}
+                          >
+                            <strong>{alert.projectName}</strong>
+                            <p>{alert.title}</p>
+                            <span>
+                              {alert.daysRemaining < 0
+                                ? lang === "en"
+                                  ? `${Math.abs(alert.daysRemaining)} days overdue`
+                                  : `已逾期 ${Math.abs(alert.daysRemaining)} 天`
+                                : lang === "en"
+                                  ? `Due in ${alert.daysRemaining} days`
+                                  : `${alert.daysRemaining} 天后到期`}
+                            </span>
+                          </article>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="empty-state-card">
+                        <strong>{lang === "en" ? "No urgent alerts right now" : "当前没有紧急预警"}</strong>
+                        <p>
+                          {lang === "en"
+                            ? "Delivery milestones are currently within the configured planning window."
+                            : "当前交付里程碑均在计划窗口内。"}
+                        </p>
+                      </div>
+                    )}
+                  </section>
+
+                  <section className="panel panel-spacer">
+                    <div className="panel-head">
+                      <div>
+                        <p className="section-kicker">{lang === "en" ? "Featured work" : "重点项目"}</p>
+                        <h2>{lang === "en" ? "Flagship projects" : "旗舰项目"}</h2>
+                      </div>
+                      <span className="chip">{lang === "en" ? "Live portfolio" : "实时项目组合"}</span>
+                    </div>
+
+                    <div className="project-brief-list">
+                      {featuredProjects.map((project) => {
+                        const health = getProjectHealth(project);
+
+                        return (
+                          <article key={project.id} className="project-brief-card">
+                            <div className="project-brief-head">
+                              <h3>{project.name}</h3>
+                              <span className={`project-health-pill ${health.tone}`}>{health.label}</span>
+                            </div>
+                            <p>{project.description}</p>
+                            <div className="project-brief-meta">
+                              <span>{formatPercent(project.progressPercent)}</span>
+                              <span>{formatCurrency(project.budgetTotal)}</span>
+                            </div>
+                          </article>
+                        );
+                      })}
+                    </div>
+                  </section>
+                </div>
               </section>
 
               <section className="panel panel-spacer">
                 <div className="panel-head">
-                  <h2>{lang === "en" ? "Portfolio Health" : "项目组合健康"}</h2>
-                  <span className="chip">{lang === "en" ? "Multi-Project" : "多项目"}</span>
+                  <div>
+                    <p className="section-kicker">{lang === "en" ? "Portfolio command" : "组合指挥"}</p>
+                    <h2>{lang === "en" ? "Portfolio Health" : "项目组合健康"}</h2>
+                  </div>
+                  <span className="chip">{lang === "en" ? "Multi-project intelligence" : "多项目洞察"}</span>
                 </div>
                 {isDemoMode && (
                   <div className="demo-mode-banner">
@@ -559,58 +766,53 @@ export default function App() {
                       : "当前显示演示组合数据。连接 GraphQL 权限后将自动切换为实时项目健康数据。"}
                   </div>
                 )}
+                {error && (
+                  <div className="projects-state-card projects-state-error">
+                    <h3>{lang === "en" ? "Portfolio data unavailable" : "项目组合数据不可用"}</h3>
+                    <p>{error.message}</p>
+                  </div>
+                )}
                 {loading ? (
                   <p className="projects-state-copy">{lang === "en" ? "Loading portfolio metrics..." : "正在加载组合指标..."}</p>
                 ) : (
-                  <div className="kpi-grid">
-                    <article className="kpi-card">
-                      <p className="kpi-label">{lang === "en" ? "Total Projects" : "项目总数"}</p>
-                      <p className="kpi-value">{portfolioSummary.total}</p>
-                      <p className="kpi-note">{lang === "en" ? `${portfolioSummary.active} active` : `${portfolioSummary.active} 个进行中`}</p>
-                    </article>
-                    <article className="kpi-card">
-                      <p className="kpi-label">{lang === "en" ? "At Risk" : "风险项目"}</p>
-                      <p className="kpi-value">{portfolioSummary.atRisk}</p>
-                      <p className="kpi-note">{lang === "en" ? `${portfolioSummary.completed} completed` : `${portfolioSummary.completed} 个已完成`}</p>
-                    </article>
-                    <article className="kpi-card">
-                      <p className="kpi-label">{lang === "en" ? "Budget Performance" : "预算表现"}</p>
-                      <p className="kpi-value">{formatPercent(portfolioSummary.budgetTotal > 0 ? (portfolioSummary.budgetSpent / portfolioSummary.budgetTotal) * 100 : 0)}</p>
-                      <p className="kpi-note">{`${formatCurrency(portfolioSummary.budgetSpent)} / ${formatCurrency(portfolioSummary.budgetTotal)}`}</p>
-                    </article>
-                    <article className="kpi-card">
-                      <p className="kpi-label">{lang === "en" ? "Average Progress" : "平均进度"}</p>
-                      <p className="kpi-value">{formatPercent(portfolioSummary.avgProgress)}</p>
-                      <p className="kpi-note">{lang === "en" ? "Cross-project timeline trend" : "跨项目进度趋势"}</p>
-                    </article>
-                  </div>
-                )}
+                  <div className="portfolio-layout">
+                    <div>
+                      <PortfolioChart portfolioSummary={portfolioSummary} />
+                    </div>
 
-                {milestoneAlerts.length > 0 && (
-                  <div className="milestone-alert-strip">
-                    {milestoneAlerts.map((alert) => (
-                      <article key={`${alert.projectName}-${alert.title}-${alert.dueDate}`} className={`milestone-alert-card ${alert.daysRemaining < 0 ? "overdue" : "upcoming"}`}>
-                        <strong>{alert.projectName}</strong>
-                        <p>{alert.title}</p>
-                        <span>
-                          {alert.daysRemaining < 0
-                            ? lang === "en"
-                              ? `${Math.abs(alert.daysRemaining)} days overdue`
-                              : `已逾期 ${Math.abs(alert.daysRemaining)} 天`
-                            : lang === "en"
-                              ? `Due in ${alert.daysRemaining} days`
-                              : `${alert.daysRemaining} 天后到期`}
-                        </span>
-                      </article>
-                    ))}
+                    <aside className="portfolio-sidecard">
+                      <h3>{lang === "en" ? "Commercial posture" : "商务态势"}</h3>
+                      <p>
+                        {lang === "en"
+                          ? "Use the live portfolio view to brief clients, align site teams, and expose cost risk early."
+                          : "使用实时项目组合视图向客户汇报、协调现场团队，并及早暴露成本风险。"}
+                      </p>
+                      <div className="project-metrics compact-metrics">
+                        <div>
+                          <dt>{lang === "en" ? "Total projects" : "项目总数"}</dt>
+                          <dd>{portfolioSummary.total}</dd>
+                        </div>
+                        <div>
+                          <dt>{lang === "en" ? "Completed" : "已完成"}</dt>
+                          <dd>{portfolioSummary.completed}</dd>
+                        </div>
+                        <div>
+                          <dt>{lang === "en" ? "Active" : "进行中"}</dt>
+                          <dd>{portfolioSummary.active}</dd>
+                        </div>
+                      </div>
+                    </aside>
                   </div>
                 )}
               </section>
 
               <section className="panel panel-spacer">
                 <div className="panel-head">
-                  <h2>{lang === "en" ? "Project Templates" : "项目模板"}</h2>
-                  <span className="chip">{lang === "en" ? "Standardized Delivery" : "标准化交付"}</span>
+                  <div>
+                    <p className="section-kicker">{lang === "en" ? "Delivery systems" : "交付系统"}</p>
+                    <h2>{lang === "en" ? "Project Templates" : "项目模板"}</h2>
+                  </div>
+                  <span className="chip">{lang === "en" ? "Standardized delivery" : "标准化交付"}</span>
                 </div>
                 <div className="template-grid">
                   {PROJECT_TEMPLATES.map((template) => (

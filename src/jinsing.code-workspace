@@ -1,0 +1,19 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		},
+		{
+			"path": "../../jeea"
+		}
+	],
+	"settings": {
+		"chat.tools.terminal.autoApprove": {
+			"/^\\$script = \"C:\\\\Users\\\\denis\\\\\\.claude\\\\skills\\\\context-memory\\\\scripts\\\\context_manager\\.py\"; \\$project = \"C:\\\\xampp\\\\htdocs\\\\wordpress\\\\wp-content\\\\plugins\\\\jeea\"; \\$payload = \\[ordered\\]@\\{ title = \"JINSING platform blueprint and target role model\"; summary = \"Defined the platform-level product blueprint for JINSING, including phased module architecture, a nine-role target access model, MVP scope, core data domains, and the decision to keep finance as a shared ledger for project-linked costs and company overhead without external accounting integrations for now\\.\"; category = \"decision\"; tags = @\\(\"jinsing\", \"architecture\", \"roles\", \"finance\", \"mvp\", \"construction-platform\"\\); files = @\\(\"docs/JINSING_PLATFORM_BLUEPRINT\\.md\"\\); importance = \"high\"; retrieval_hints = \"jinsing platform blueprint roles finance ledger overhead project linked costs mvp kenya compliance\"; details_what = \"Added a project blueprint document that defines platform layers, target modules, the nine-role operating model, capability design rules, core data domains, MVP boundaries, delivery phases, and the next implementation slices\\.\"; details_why = \"The project is shifting from isolated feature work to a full construction operations platform and needed a single standard for scope, permissions, module boundaries, and implementation order\\.\"; details_impact = \"Future work can now align around a shared architecture, especially for role expansion, unified finance, project-scoped permissions, document workflows, and phased product delivery\\.\"; details_extra = \"Explicitly deferred external accounting integrations for now and reserved Kenya compliance as a future capability bundle or dedicated role\\.\" \\}; \\$json = \\$payload \\| ConvertTo-Json -Compress -Depth 5; if \\(Get-Command python -ErrorAction SilentlyContinue\\) \\{ \\$record = python \\$script --project-root \\$project record --input-json=\\$json; if \\(\\$LASTEXITCODE -ne 0\\) \\{ exit \\$LASTEXITCODE \\}; \\$parsed = \\$record \\| ConvertFrom-Json; python \\$script --project-root \\$project link-commit --entry-id \\$parsed\\.entry_id --commit HEAD \\} elseif \\(Get-Command py -ErrorAction SilentlyContinue\\) \\{ \\$record = py -3 \\$script --project-root \\$project record --input-json=\\$json; if \\(\\$LASTEXITCODE -ne 0\\) \\{ exit \\$LASTEXITCODE \\}; \\$parsed = \\$record \\| ConvertFrom-Json; py -3 \\$script --project-root \\$project link-commit --entry-id \\$parsed\\.entry_id --commit HEAD \\} else \\{ Write-Error \"Python not found\"; exit 1 \\}$/": {
+				"approve": true,
+				"matchCommandLine": true
+			},
+			"Test-Path": true
+		}
+	}
+}

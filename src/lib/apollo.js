@@ -1,9 +1,26 @@
 import { ApolloClient, HttpLink, InMemoryCache } from "@apollo/client/core";
 import { setContext } from "@apollo/client/link/context";
 
-const GRAPHQL_ENDPOINT =
-  import.meta.env.VITE_GRAPHQL_ENDPOINT ||
-  "https://mtj.ivk.mybluehost.me/website_cf306033/graphql";
+function isPrivateNetworkHost(hostname) {
+  return (
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    hostname === "::1" ||
+    hostname.startsWith("192.168.") ||
+    /^10\./.test(hostname) ||
+    /^172\.(1[6-9]|2\d|3[0-1])\./.test(hostname)
+  );
+}
+
+function getDefaultGraphQLEndpoint() {
+  if (typeof window !== "undefined" && isPrivateNetworkHost(window.location.hostname)) {
+    return `${window.location.protocol}//${window.location.hostname}/wordpress/graphql`;
+  }
+
+  return "https://mtj.ivk.mybluehost.me/website_cf306033/graphql";
+}
+
+const GRAPHQL_ENDPOINT = import.meta.env.VITE_GRAPHQL_ENDPOINT || getDefaultGraphQLEndpoint();
 
 const GRAPHQL_JWT_KEY = "jeea_graphql_jwt";
 
