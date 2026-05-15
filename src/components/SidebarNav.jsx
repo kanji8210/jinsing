@@ -3,6 +3,8 @@ const DEFAULT_ITEMS = [
   { id: "projects", label: "Projects", icon: "projects" },
   { id: "finance", label: "Finance", icon: "finance" },
   { id: "reports", label: "Reports", icon: "reports" },
+  { id: "docs", label: "Documentation", icon: "docs" },
+  { id: "entries", label: "Auto Entries", icon: "entries" },
   { id: "settings", label: "Settings", icon: "settings" },
 ];
 
@@ -30,6 +32,18 @@ function NavIcon({ name }) {
       return (
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="M6 2h9l5 5v15H6V2zm9 1.5V8h4.5L15 3.5zM8 12h8v2H8v-2zm0 4h8v2H8v-2zM8 8h4v2H8V8z" />
+        </svg>
+      );
+    case "docs":
+      return (
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 4h16v2H4V4zm0 4h12v2H4V8zm0 4h16v2H4v-2zm0 4h12v2H4v-2z" />
+        </svg>
+      );
+    case "entries":
+      return (
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M3 3h18v4H3V3zm0 6h18v2H3V9zm0 5h10v2H3v-2zm14 0l3 3-3 3-1.4-1.4 1.6-1.6-1.6-1.6L17 14zm-4 5v2H3v-2h10z" />
         </svg>
       );
     case "settings":

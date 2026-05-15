@@ -3,10 +3,10 @@ import { gql } from "@apollo/client";
 import { useQuery } from "@apollo/client/react";
 import SidebarNav from "./components/SidebarNav";
 import KpiCards from "./components/KpiCards";
-import PortfolioChart from "./components/PortfolioChart";
-import QuoteForm from "./components/QuoteForm";
 import SuppliersPage from "./pages/SuppliersPage";
 import CasualEmployeesPage from "./pages/CasualEmployeesPage";
+import DocsPage from "./pages/DocsPage";
+import AutoEntriesPage from "./pages/AutoEntriesPage";
 import apolloClient, {
   clearStoredAuthToken,
   getStoredAuthToken,
@@ -200,8 +200,8 @@ const COPY = {
   en: {
     languageLabel: "Language",
     sidebar: {
-      brand: "JEEA",
-      subtitle: "Construction admin",
+      brand: "Jinsing",
+      subtitle: "Docs and demo access",
       items: [
         { id: "dashboard", label: "Dashboard", icon: "dashboard" },
         { id: "projects", label: "Projects", icon: "projects" },
@@ -209,6 +209,8 @@ const COPY = {
         { id: "employees", label: "Casual Employees", icon: "employees" },
         { id: "finance", label: "Finance", icon: "finance" },
         { id: "reports", label: "Reports", icon: "reports" },
+        { id: "docs", label: "Documentation", icon: "docs" },
+        { id: "entries", label: "Auto Entries", icon: "entries" },
         { id: "settings", label: "Settings", icon: "settings" },
       ],
     },
@@ -245,15 +247,17 @@ const COPY = {
   zh: {
     languageLabel: "语言",
     sidebar: {
-      brand: "JEEA",
-      subtitle: "施工管理",
+      brand: "Jinsing",
+      subtitle: "文档与演示访问",
       items: [
         { id: "dashboard", label: "仪表盘", icon: "dashboard" },
         { id: "projects", label: "项目", icon: "projects" },
-        { id: "suppliers", label: "供应商", icon: "suppliers" },
+        { id: "供应商", label: "供应商", icon: "suppliers" },
         { id: "employees", label: "临时员工", icon: "employees" },
         { id: "finance", label: "财务", icon: "finance" },
         { id: "reports", label: "报表", icon: "reports" },
+        { id: "docs", label: "文档", icon: "docs" },
+        { id: "entries", label: "自动录入", icon: "entries" },
         { id: "settings", label: "设置", icon: "settings" },
       ],
     },
@@ -288,13 +292,181 @@ const COPY = {
   },
 };
 
+const LANDING_CONTENT = {
+  en: {
+    topbar: {
+      docs: "Documentation",
+      login: "Login",
+    },
+    hero: {
+      eyebrow: "JINSING Construction Platform",
+      title: "Project management for JINSING.",
+      description:
+        "Track projects, costs, suppliers, and field teams. Log in to access your workspace.",
+      cta: "Login to Platform",
+    },
+    capabilities: [
+      { code: "PRJ", title: "Project Tracking", text: "Milestones, progress, and budget in one view." },
+      { code: "CST", title: "Cost Management", text: "Accurate estimates and transparent spend tracking." },
+      { code: "SUP", title: "Suppliers", text: "Supplier records, contacts, and payment terms." },
+      { code: "FLD", title: "Field Teams", text: "Casual employee records, skills, and daily rates." },
+    ],
+    docsTitle: "Documentation",
+    docs: [
+      "API Reference - GraphQL schema, authentication, and rate limits",
+      "Mobile App Guide - Offline setup, receipt scanning, and daily logs",
+      "Integration Tutorials - M-Pesa, OCR, and weather data flows",
+      "Compliance Workflows - NCA, KRA, audit trails, and exports",
+      "Database Schema - Jinsing tables and operational entities explained",
+      "Video Walkthroughs - Short tours for onboarding and technical teams",
+    ],
+    docsCta: "Browse Documentation",
+    footerCta: "Log in to access all platform features.",
+    footerLogin: "Login",
+    // keep for other pages
+    signals: [
+      {
+        label: "Access model",
+        value: "JINSING",
+        note: "Provisioned accounts for JINSING project teams",
+      },
+      {
+        label: "API surface",
+        value: "GraphQL",
+        note: "Authentication, schema patterns, and workflow examples",
+      },
+      {
+        label: "Demo projects",
+        value: "Live",
+        note: "Preloaded sample data for feature walkthroughs",
+      },
+      {
+        label: "Feedback loop",
+        value: "Direct",
+        note: "Feature requests and bug reports go to the product team",
+      },
+    ],
+    metrics: [
+      { label: "Documentation modules", value: "6", note: "API, mobile, compliance, integrations" },
+      { label: "Project teams", value: "JINSING", note: "Construction, engineering, and PM personnel" },
+      { label: "Demo projects", value: "3", note: "Preloaded scenarios to explore core workflows" },
+      { label: "Response window", value: "24h", note: "Fast onboarding and feedback turnaround" },
+    ],
+    featuresTitle: "Your Access Includes",
+    features: [
+      {
+        code: "DOC",
+        title: "Complete Documentation",
+        text: "API guides, integration tutorials, workflow examples, and implementation notes.",
+      },
+      {
+        code: "KEY",
+        title: "Login Credentials",
+        text: "A guided onboarding flow for dashboard and sandbox access.",
+      },
+      {
+        code: "DEM",
+        title: "Demo Project",
+        text: "Preloaded project data so teams can explore without setup overhead.",
+      },
+      {
+        code: "COM",
+        title: "Team Collaboration",
+        text: "JINSING project members share a common workspace for updates and discussion.",
+      },
+      {
+        code: "UPD",
+        title: "Update Notifications",
+        text: "Be first to know when integrations, guides, and workflows ship.",
+      },
+      {
+        code: "BUG",
+        title: "Bug Reporting",
+        text: "Send product issues directly to the build team while the platform evolves.",
+      },
+    ],
+    stepsTitle: "Get Started in 2 Minutes",
+    steps: [
+      { step: "01", title: "Request Access", text: "Submit your name, email, and role. Requests are reviewed and onboarded by the platform team." },
+      { step: "02", title: "Verify", text: "Confirm your email and receive onboarding links for docs and platform credentials." },
+      { step: "03", title: "Login & Explore", text: "Open the dashboard, browse docs, and test with JINSING demo project data." },
+    ],
+    docsTitle: "What's Inside Our Documentation?",
+    docs: [
+      "API Reference - GraphQL schema, authentication, and rate limits",
+      "Mobile App Guide - Offline setup, receipt scanning, and daily logs",
+      "Integration Tutorials - M-Pesa, OCR, and weather data flows",
+      "Compliance Workflows - NCA, KRA, audit trails, and exports",
+      "Database Schema - Jinsing tables and operational entities explained",
+      "Video Walkthroughs - Short tours for onboarding and technical teams",
+    ],
+    docsCta: "Browse Public Docs",
+    audiencesTitle: "JINSING Roles",
+    audiences: [
+      { role: "Site Manager", text: "Track expenses, documentation, and site teams with local-first workflows." },
+      { role: "Systems Team", text: "Integrate Jinsing into JINSING's existing systems through a documented GraphQL surface." },
+      { role: "Architect / Engineer", text: "Collaborate on RFIs, inspections, and technical submissions." },
+      { role: "Project Manager", text: "Review dashboards, forecasts, and compliance snapshots in one place." },
+    ],
+    roadmapTitle: "Platform Roadmap",
+    roadmapCopy:
+      "Jinsing is under active development. Feedback from JINSING project teams directly shapes priority features and integrations.",
+    roadmap: [
+      { status: "Live", title: "AI receipt scanning", detail: "Beta workflows available in the demo environment" },
+      { status: "Next", title: "M-Pesa integration", detail: "Payment and reconciliation flows in the current roadmap" },
+      { status: "Next", title: "Mobile offline forms", detail: "Field capture designed for low-connectivity site operations" },
+      { status: "Later", title: "NCA direct filing", detail: "Compliance automation planned after core feedback rounds" },
+    ],
+    feedbackCta: "Request Feature",
+    testimonialsTitle: "Platform Capabilities",
+    testimonials: [
+      {
+        quote: "The documentation is specific enough that integration teams can map the approach in two days.",
+        author: "Platform Team",
+        role: "Documentation & API surface",
+      },
+      {
+        quote: "The demo environment is preloaded with realistic Kenyan construction project data for immediate evaluation.",
+        author: "Platform Team",
+        role: "Demo environment",
+      },
+    ],
+    faqTitle: "Frequently Asked Questions",
+    faq: [
+      {
+        question: "Who can request access?",
+        answer: "Access is provisioned for JINSING project personnel. Submit your request and our team will onboard you directly.",
+      },
+      {
+        question: "What do I get after registering?",
+        answer: "You receive onboarding links, documentation access, sandbox credentials, and a demo environment with preloaded JINSING-relevant project data.",
+      },
+      {
+        question: "Can I use Jinsing for live JINSING projects?",
+        answer: "Yes for documentation, reporting, and workflow evaluation. Full rollout depends on your team's operational readiness review.",
+      },
+      {
+        question: "How do I report issues or request features?",
+        answer: "Use the feature request link or contact the platform team directly so we can triage feedback from JINSING teams.",
+      },
+    ],
+    finalTitle: "Request Platform Access",
+    finalCopy: "Submit your request and get onboarding links, documentation access, and demo credentials.",
+    finalPrimary: "Request Access",
+    finalSecondary: "Browse Documentation",
+    finalNote: "Access is provisioned for authorised JINSING project personnel.",
+  },
+};
+
+LANDING_CONTENT.zh = LANDING_CONTENT.en;
+
 export default function App() {
   const [lang, setLang] = useState("en");
   const [activeNav, setActiveNav] = useState("dashboard");
-  const [showQuoteForm, setShowQuoteForm] = useState(false);
   const [apiToken, setApiToken] = useState("");
   const [tokenState, setTokenState] = useState("idle");
   const t = COPY[lang];
+  const landing = LANDING_CONTENT[lang] || LANDING_CONTENT.en;
   const isPortfolioView = activeNav === "projects" || activeNav === "dashboard";
   const { data, loading, error } = useQuery(GET_PROJECTS, {
     skip: !isPortfolioView,
@@ -306,76 +478,8 @@ export default function App() {
   const isDemoMode = !loading && !hasLiveProjects;
   const portfolioSummary = getPortfolioSummary(displayProjects);
   const milestoneAlerts = getMilestoneAlerts(displayProjects);
-  const budgetUtilization =
-    portfolioSummary.budgetTotal > 0
-      ? (portfolioSummary.budgetSpent / portfolioSummary.budgetTotal) * 100
-      : 0;
-  const landingKpis = [
-    {
-      label: lang === "en" ? "Active sites" : "进行中的工地",
-      value: `${portfolioSummary.active}`,
-      note:
-        lang === "en"
-          ? `${portfolioSummary.total} tracked programs`
-          : `共跟踪 ${portfolioSummary.total} 个项目`,
-    },
-    {
-      label: lang === "en" ? "Budget burn" : "预算消耗",
-      value: formatPercent(budgetUtilization),
-      note: `${formatCurrency(portfolioSummary.budgetSpent)} / ${formatCurrency(portfolioSummary.budgetTotal)}`,
-    },
-    {
-      label: lang === "en" ? "At-risk packages" : "风险包件",
-      value: `${portfolioSummary.atRisk}`,
-      note:
-        lang === "en"
-          ? "Requires leadership attention"
-          : "需要管理层关注",
-    },
-    {
-      label: lang === "en" ? "Average progress" : "平均进度",
-      value: formatPercent(portfolioSummary.avgProgress),
-      note:
-        lang === "en"
-          ? "Across the full portfolio"
-          : "跨整个项目组合",
-    },
-  ];
-  const operatingSignals = [
-    {
-      label: lang === "en" ? "Response desk" : "响应中心",
-      value: lang === "en" ? "24h" : "24 小时",
-      note:
-        lang === "en"
-          ? "Quotes and commercial clarifications"
-          : "报价与商务澄清",
-    },
-    {
-      label: lang === "en" ? "Field supervision" : "现场监管",
-      value: `${portfolioSummary.active}`,
-      note:
-        lang === "en"
-          ? "Live projects under coordination"
-          : "正在协调的在建项目",
-    },
-    {
-      label: lang === "en" ? "Milestone alerts" : "里程碑预警",
-      value: `${milestoneAlerts.length}`,
-      note:
-        lang === "en"
-          ? "Upcoming or overdue actions"
-          : "即将到期或已逾期事项",
-    },
-    {
-      label: lang === "en" ? "Forecast confidence" : "预测信心",
-      value: portfolioSummary.atRisk > 0 ? "84%" : "93%",
-      note:
-        lang === "en"
-          ? "Budget and delivery alignment"
-          : "预算与交付一致性",
-    },
-  ];
   const featuredProjects = displayProjects.slice(0, 3);
+  const demoProject = featuredProjects[0] || DEMO_PROJECTS[0];
 
   useEffect(() => {
     const existingToken = getStoredAuthToken();
@@ -404,6 +508,22 @@ export default function App() {
     apolloClient.resetStore().catch(() => {});
   }
 
+  function scrollToSection(id) {
+    if (typeof document === "undefined") {
+      return;
+    }
+
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function handleFeatureRequest() {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    window.location.href = "mailto:support@jinsing.com?subject=Jinsing%20Feature%20Request";
+  }
+
   const pageTitle = {
     dashboard: lang === "en" ? "Dashboard" : "仪表盘",
     projects: lang === "en" ? "Projects" : "项目",
@@ -411,6 +531,8 @@ export default function App() {
     employees: lang === "en" ? "Casual Employees" : "临时员工",
     finance: lang === "en" ? "Finance" : "财务",
     reports: lang === "en" ? "Reports" : "报表",
+    docs: lang === "en" ? "Documentation" : "文档",
+    entries: lang === "en" ? "Auto Entries" : "自动录入",
     settings: lang === "en" ? "Settings" : "设置",
   }[activeNav];
 
@@ -439,6 +561,14 @@ export default function App() {
       lang === "en"
         ? "Executive summaries and reporting views will live here."
         : "管理层摘要和报表视图将在这里呈现。",
+    docs:
+      lang === "en"
+        ? "Guides, API references, and tutorials for the Jinsing platform."
+        : "Jinsing 平台的指南、API 参考和教程。",
+    entries:
+      lang === "en"
+        ? "Automated expense, time, and material entries from all sources."
+        : "来自所有来源的自动费用、时间和材料记录。",
     settings:
       lang === "en"
         ? "System preferences and access controls will be configured here."
@@ -568,265 +698,81 @@ export default function App() {
 
           {activeNav === "dashboard" && (
             <>
-              {showQuoteForm && (
-                <div className="quote-form-modal-overlay">
-                  <div className="quote-form-modal">
-                    <button
-                      className="modal-close"
-                      onClick={() => setShowQuoteForm(false)}
-                      aria-label="Close form"
-                    >
-                      ✕
-                    </button>
-                    <QuoteForm
-                      lang={lang}
-                      onClose={() => setShowQuoteForm(false)}
-                    />
-                  </div>
+              {/* Topbar */}
+              <section className="lp-topbar panel">
+                <div className="lp-brand">
+                  <strong>Jinsing</strong>
+                  <span>Construction Platform</span>
                 </div>
-              )}
-
-              <section className="panel panel-command">
-                <div className="command-hero-grid">
-                  <div className="command-hero-copy">
-                    <p className="eyebrow">{t.hero.eyebrow}</p>
-                    <h1>{t.landing.title}</h1>
-                    <p className="hero-subtitle">{t.landing.subtitle}</p>
-                    <p className="hero-copy">{t.landing.description}</p>
-
-                    <div className="landing-cta-row">
-                      <button
-                        type="button"
-                        className="cta-btn cta-primary"
-                        onClick={() => setShowQuoteForm(true)}
-                      >
-                        {t.landing.quoteCta}
-                      </button>
-                      <button
-                        type="button"
-                        className="cta-btn cta-secondary"
-                        onClick={() => setActiveNav("settings")}
-                      >
-                        {t.landing.loginCta}
-                      </button>
-                    </div>
-
-                    <p className="safe-note">{t.landing.safetyNote}</p>
-
-                    <div className="trust-bar" aria-label={lang === "en" ? "Capabilities" : "能力标签"}>
-                      <span className="trust-pill">{lang === "en" ? "Design-build coordination" : "设计施工协调"}</span>
-                      <span className="trust-pill">{lang === "en" ? "Cost command" : "成本管控"}</span>
-                      <span className="trust-pill">{lang === "en" ? "Field execution" : "现场执行"}</span>
-                    </div>
-                  </div>
-
-                  <aside className="hero-console" aria-label={lang === "en" ? "Operational console" : "运营控制台"}>
-                    <div className="panel-head">
-                      <div>
-                        <p className="console-kicker">{lang === "en" ? "Live command console" : "实时指挥控制台"}</p>
-                        <h2>{lang === "en" ? "Engineering readiness" : "工程准备度"}</h2>
-                      </div>
-                      <span className={`chip ${isDemoMode ? "chip-live" : "chip-success"}`}>
-                        {isDemoMode
-                          ? lang === "en"
-                            ? "Demo telemetry"
-                            : "演示数据"
-                          : lang === "en"
-                            ? "Live telemetry"
-                            : "实时数据"}
-                      </span>
-                    </div>
-
-                    <div className="console-grid">
-                      {operatingSignals.map((item) => (
-                        <article key={item.label} className="console-card">
-                          <p className="console-label">{item.label}</p>
-                          <strong className="console-value">{item.value}</strong>
-                          <span className="console-note">{item.note}</span>
-                        </article>
-                      ))}
-                    </div>
-                  </aside>
+                <div className="lp-topbar-actions">
+                  <button
+                    type="button"
+                    className="topbar-link"
+                    onClick={() => scrollToSection("lp-docs")}
+                  >
+                    {landing.topbar.docs}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-ghost"
+                    onClick={() => setActiveNav("settings")}
+                  >
+                    {landing.topbar.login}
+                  </button>
                 </div>
               </section>
 
-              <KpiCards
-                items={landingKpis}
-                ariaLabel={lang === "en" ? "Portfolio command metrics" : "项目组合指挥指标"}
-              />
-
-              <section className="landing-content-grid panel-spacer">
-                <section className="panel service-column">
-                  <div className="panel-head">
-                    <div>
-                      <p className="section-kicker">{lang === "en" ? "Core offer" : "核心服务"}</p>
-                      <h2>{lang === "en" ? "Engineering delivery, framed as systems" : "以系统化方式交付工程"}</h2>
-                    </div>
-                    <span className="chip">{lang === "en" ? "Premium technical teams" : "专业技术团队"}</span>
-                  </div>
-
-                  <div className="service-card-grid">
-                    {t.landing.highlights.map((item, index) => (
-                      <article key={item.title} className="showcase-card">
-                        <span className="service-index">0{index + 1}</span>
-                        <h3>{item.title}</h3>
-                        <p>{item.text}</p>
-                      </article>
-                    ))}
-                  </div>
-                </section>
-
-                <div className="intel-column">
-                  <section className="panel">
-                    <div className="panel-head">
-                      <div>
-                        <p className="section-kicker">{lang === "en" ? "Action board" : "行动面板"}</p>
-                        <h2>{lang === "en" ? "Milestone pressure points" : "里程碑关键点"}</h2>
-                      </div>
-                      <span className="chip chip-warn">{lang === "en" ? "Two-week horizon" : "两周窗口"}</span>
-                    </div>
-
-                    {milestoneAlerts.length > 0 ? (
-                      <div className="milestone-alert-strip compact">
-                        {milestoneAlerts.slice(0, 4).map((alert) => (
-                          <article
-                            key={`${alert.projectName}-${alert.title}-${alert.dueDate}`}
-                            className={`milestone-alert-card ${alert.daysRemaining < 0 ? "overdue" : "upcoming"}`}
-                          >
-                            <strong>{alert.projectName}</strong>
-                            <p>{alert.title}</p>
-                            <span>
-                              {alert.daysRemaining < 0
-                                ? lang === "en"
-                                  ? `${Math.abs(alert.daysRemaining)} days overdue`
-                                  : `已逾期 ${Math.abs(alert.daysRemaining)} 天`
-                                : lang === "en"
-                                  ? `Due in ${alert.daysRemaining} days`
-                                  : `${alert.daysRemaining} 天后到期`}
-                            </span>
-                          </article>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="empty-state-card">
-                        <strong>{lang === "en" ? "No urgent alerts right now" : "当前没有紧急预警"}</strong>
-                        <p>
-                          {lang === "en"
-                            ? "Delivery milestones are currently within the configured planning window."
-                            : "当前交付里程碑均在计划窗口内。"}
-                        </p>
-                      </div>
-                    )}
-                  </section>
-
-                  <section className="panel panel-spacer">
-                    <div className="panel-head">
-                      <div>
-                        <p className="section-kicker">{lang === "en" ? "Featured work" : "重点项目"}</p>
-                        <h2>{lang === "en" ? "Flagship projects" : "旗舰项目"}</h2>
-                      </div>
-                      <span className="chip">{lang === "en" ? "Live portfolio" : "实时项目组合"}</span>
-                    </div>
-
-                    <div className="project-brief-list">
-                      {featuredProjects.map((project) => {
-                        const health = getProjectHealth(project);
-
-                        return (
-                          <article key={project.id} className="project-brief-card">
-                            <div className="project-brief-head">
-                              <h3>{project.name}</h3>
-                              <span className={`project-health-pill ${health.tone}`}>{health.label}</span>
-                            </div>
-                            <p>{project.description}</p>
-                            <div className="project-brief-meta">
-                              <span>{formatPercent(project.progressPercent)}</span>
-                              <span>{formatCurrency(project.budgetTotal)}</span>
-                            </div>
-                          </article>
-                        );
-                      })}
-                    </div>
-                  </section>
-                </div>
+              {/* Hero */}
+              <section className="lp-hero panel">
+                <p className="lp-eyebrow">{landing.hero.eyebrow}</p>
+                <h1 className="lp-title">{landing.hero.title}</h1>
+                <p className="lp-desc">{landing.hero.description}</p>
+                <button
+                  type="button"
+                  className="btn-primary"
+                  onClick={() => setActiveNav("settings")}
+                >
+                  {landing.hero.cta}
+                </button>
               </section>
 
-              <section className="panel panel-spacer">
+              {/* Capability cards */}
+              <div className="lp-caps-grid">
+                {landing.capabilities.map((cap) => (
+                  <article key={cap.code} className="lp-cap-card panel">
+                    <span className="lp-cap-code">{cap.code}</span>
+                    <h3 className="lp-cap-title">{cap.title}</h3>
+                    <p className="lp-cap-text">{cap.text}</p>
+                  </article>
+                ))}
+              </div>
+
+              {/* Documentation */}
+              <section id="lp-docs" className="panel lp-docs-section">
                 <div className="panel-head">
-                  <div>
-                    <p className="section-kicker">{lang === "en" ? "Portfolio command" : "组合指挥"}</p>
-                    <h2>{lang === "en" ? "Portfolio Health" : "项目组合健康"}</h2>
-                  </div>
-                  <span className="chip">{lang === "en" ? "Multi-project intelligence" : "多项目洞察"}</span>
+                  <h2 className="lp-section-title">{landing.docsTitle}</h2>
+                  <span className="chip">Public</span>
                 </div>
-                {isDemoMode && (
-                  <div className="demo-mode-banner">
-                    {lang === "en"
-                      ? "Showing demo portfolio data. Connect your GraphQL permissions to switch to live project health."
-                      : "当前显示演示组合数据。连接 GraphQL 权限后将自动切换为实时项目健康数据。"}
-                  </div>
-                )}
-                {error && (
-                  <div className="projects-state-card projects-state-error">
-                    <h3>{lang === "en" ? "Portfolio data unavailable" : "项目组合数据不可用"}</h3>
-                    <p>{error.message}</p>
-                  </div>
-                )}
-                {loading ? (
-                  <p className="projects-state-copy">{lang === "en" ? "Loading portfolio metrics..." : "正在加载组合指标..."}</p>
-                ) : (
-                  <div className="portfolio-layout">
-                    <div>
-                      <PortfolioChart portfolioSummary={portfolioSummary} />
-                    </div>
-
-                    <aside className="portfolio-sidecard">
-                      <h3>{lang === "en" ? "Commercial posture" : "商务态势"}</h3>
-                      <p>
-                        {lang === "en"
-                          ? "Use the live portfolio view to brief clients, align site teams, and expose cost risk early."
-                          : "使用实时项目组合视图向客户汇报、协调现场团队，并及早暴露成本风险。"}
-                      </p>
-                      <div className="project-metrics compact-metrics">
-                        <div>
-                          <dt>{lang === "en" ? "Total projects" : "项目总数"}</dt>
-                          <dd>{portfolioSummary.total}</dd>
-                        </div>
-                        <div>
-                          <dt>{lang === "en" ? "Completed" : "已完成"}</dt>
-                          <dd>{portfolioSummary.completed}</dd>
-                        </div>
-                        <div>
-                          <dt>{lang === "en" ? "Active" : "进行中"}</dt>
-                          <dd>{portfolioSummary.active}</dd>
-                        </div>
-                      </div>
-                    </aside>
-                  </div>
-                )}
-              </section>
-
-              <section className="panel panel-spacer">
-                <div className="panel-head">
-                  <div>
-                    <p className="section-kicker">{lang === "en" ? "Delivery systems" : "交付系统"}</p>
-                    <h2>{lang === "en" ? "Project Templates" : "项目模板"}</h2>
-                  </div>
-                  <span className="chip">{lang === "en" ? "Standardized delivery" : "标准化交付"}</span>
-                </div>
-                <div className="template-grid">
-                  {PROJECT_TEMPLATES.map((template) => (
-                    <article key={template.id} className="template-card">
-                      <h3>{template.title}</h3>
-                      <p>{lang === "en" ? "Typical budget band" : "典型预算区间"}: {template.budgetBand}</p>
-                      <ul>
-                        {template.defaultMilestones.map((milestone) => (
-                          <li key={milestone}>{milestone}</li>
-                        ))}
-                      </ul>
+                <div className="lp-docs-list">
+                  {landing.docs.map((item) => (
+                    <article key={item} className="lp-doc-item">
+                      <strong>{item.split(" - ")[0]}</strong>
+                      <span>{item.split(" - ")[1]}</span>
                     </article>
                   ))}
                 </div>
+              </section>
+
+              {/* Login CTA footer */}
+              <section className="lp-footer-cta panel">
+                <p>{landing.footerCta}</p>
+                <button
+                  type="button"
+                  className="btn-ghost"
+                  onClick={() => setActiveNav("settings")}
+                >
+                  {landing.footerLogin}
+                </button>
               </section>
             </>
           )}
@@ -851,6 +797,10 @@ export default function App() {
           {activeNav === "suppliers" && <SuppliersPage />}
 
           {activeNav === "employees" && <CasualEmployeesPage />}
+
+          {activeNav === "docs" && <DocsPage />}
+
+          {activeNav === "entries" && <AutoEntriesPage />}
 
           {activeNav === "finance" && (
             <section className="panel panel-spacer">
