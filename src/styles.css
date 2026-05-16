@@ -1793,6 +1793,60 @@ h3 {
   color: var(--ink);
 }
 
+/* ---------- Access control gate ---------- */
+.gated-panel {
+  position: relative;
+}
+
+.gated-blur {
+  filter: blur(6px);
+  pointer-events: none;
+  user-select: none;
+}
+
+.login-lock-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.login-lock-card {
+  width: min(480px, 100%);
+  border-radius: 16px;
+  border: 1px solid rgba(214, 170, 67, 0.4);
+  background: linear-gradient(180deg, rgba(8, 17, 29, 0.95), rgba(13, 27, 43, 0.96));
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  padding: 1.15rem;
+  text-align: center;
+}
+
+.login-lock-card h3 {
+  margin: 0 0 0.35rem;
+  color: var(--ink);
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1.2rem;
+}
+
+.login-lock-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.login-lock-card .btn-primary {
+  margin-top: 0.8rem;
+}
+
+.login-lock-note {
+  margin-top: 0.6rem !important;
+  font-size: 0.78rem !important;
+  color: var(--gold) !important;
+}
+
 .lp-hero {
   padding: 1.75rem 1.5rem 2rem;
   max-width: 540px;

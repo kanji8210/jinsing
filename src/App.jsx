@@ -247,6 +247,10 @@ const COPY = {
       healthy: "Healthy",
       watch: "Watch",
       atRisk: "At Risk",
+      loginRequiredTitle: "Login Required",
+      loginRequiredBody: "This section is restricted. Please log in with your backend access key to continue.",
+      loginNow: "Go to Login",
+      selfRegistrationDisabled: "Self-registration is currently disabled.",
       actionRequired: "\u26a0 Action Required",
       viewProject: "View Project",
       manageProject: "Manage Project",
@@ -327,6 +331,10 @@ const COPY = {
       healthy: "健康",
       watch: "关注",
       atRisk: "有风险",
+      loginRequiredTitle: "需要登录",
+      loginRequiredBody: "此版块受限。请使用后端访问密钥登录后继续。",
+      loginNow: "前往登录",
+      selfRegistrationDisabled: "当前暂不开放自行注册。",
       actionRequired: "\u26a0 需要处理",
       viewProject: "查看项目",
       manageProject: "管理项目",
@@ -633,6 +641,9 @@ export default function App() {
   const projects = data?.projects ?? [];
   const hasLiveProjects = projects.length > 0;
   const displayProjects = hasLiveProjects ? projects : DEMO_PROJECTS;
+  const isLoggedIn = Boolean(apiToken.trim());
+  const protectedNavIds = ["projects", "suppliers", "employees", "finance", "reports", "docs", "entries"];
+  const requiresLogin = protectedNavIds.includes(activeNav);
   const isDemoMode = !loading && !hasLiveProjects;
   const portfolioSummary = getPortfolioSummary(displayProjects);
   const milestoneAlerts = getMilestoneAlerts(displayProjects);
@@ -984,6 +995,25 @@ export default function App() {
     );
   }
 
+  function LoginRequiredOverlay() {
+    return (
+      <div className="login-lock-overlay" role="alert" aria-live="polite">
+        <div className="login-lock-card">
+          <h3>{t.ui.loginRequiredTitle}</h3>
+          <p>{t.ui.loginRequiredBody}</p>
+          <button
+            type="button"
+            className="btn-primary"
+            onClick={() => setActiveNav("settings")}
+          >
+            {t.ui.loginNow}
+          </button>
+          <p className="login-lock-note">{t.ui.selfRegistrationDisabled}</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <main className="app">
       <div className="dashboard-layout">
@@ -1105,7 +1135,9 @@ export default function App() {
           )}
 
           {activeNav === "projects" && (
-            <section className="panel panel-spacer">
+            <section className="panel panel-spacer gated-panel">
+              {!isLoggedIn && <LoginRequiredOverlay />}
+              <div className={!isLoggedIn && requiresLogin ? "gated-blur" : undefined}>
               <div className="panel-head">
                 <h2>{pageTitle}</h2>
                 <span className="chip">{t.ui.deliveryChip}</span>
@@ -1118,34 +1150,69 @@ export default function App() {
                 { id: 2, name: t.ui.docNames[1], url: "/docs/license.pdf" },
                 { id: 3, name: t.ui.docNames[2], url: "/docs/render.pdf" },
               ]} />
+              </div>
             </section>
           )}
 
-          {activeNav === "suppliers" && <SuppliersPage />}
+          {activeNav === "suppliers" && (
+            <section className="gated-panel">
+              {!isLoggedIn && requiresLogin && <LoginRequiredOverlay />}
+              <div className={!isLoggedIn && requiresLogin ? "gated-blur" : undefined}>
+                <SuppliersPage />
+              </div>
+            </section>
+          )}
 
-          {activeNav === "employees" && <CasualEmployeesPage />}
+          {activeNav === "employees" && (
+            <section className="gated-panel">
+              {!isLoggedIn && requiresLogin && <LoginRequiredOverlay />}
+              <div className={!isLoggedIn && requiresLogin ? "gated-blur" : undefined}>
+                <CasualEmployeesPage />
+              </div>
+            </section>
+          )}
 
-          {activeNav === "docs" && <DocsPage />}
+          {activeNav === "docs" && (
+            <section className="gated-panel">
+              {!isLoggedIn && requiresLogin && <LoginRequiredOverlay />}
+              <div className={!isLoggedIn && requiresLogin ? "gated-blur" : undefined}>
+                <DocsPage />
+              </div>
+            </section>
+          )}
 
-          {activeNav === "entries" && <AutoEntriesPage />}
+          {activeNav === "entries" && (
+            <section className="gated-panel">
+              {!isLoggedIn && requiresLogin && <LoginRequiredOverlay />}
+              <div className={!isLoggedIn && requiresLogin ? "gated-blur" : undefined}>
+                <AutoEntriesPage />
+              </div>
+            </section>
+          )}
 
           {activeNav === "finance" && (
-            <section className="panel panel-spacer">
+            <section className="panel panel-spacer gated-panel">
+              {!isLoggedIn && <LoginRequiredOverlay />}
+              <div className={!isLoggedIn && requiresLogin ? "gated-blur" : undefined}>
               <div className="panel-head">
                 <h2>{pageTitle}</h2>
                 <span className="chip">{t.ui.controlsChip}</span>
               </div>
               <p className="panel-copy">{pageBlurb}</p>
+              </div>
             </section>
           )}
 
           {activeNav === "reports" && (
-            <section className="panel panel-spacer">
+            <section className="panel panel-spacer gated-panel">
+              {!isLoggedIn && <LoginRequiredOverlay />}
+              <div className={!isLoggedIn && requiresLogin ? "gated-blur" : undefined}>
               <div className="panel-head">
                 <h2>{pageTitle}</h2>
                 <span className="chip">{t.ui.overviewChip}</span>
               </div>
               <p className="panel-copy">{pageBlurb}</p>
+              </div>
             </section>
           )}
 
@@ -1160,11 +1227,11 @@ export default function App() {
               <div className="auth-panel">
                 <div className="auth-panel-head">
                   <div>
-                    <h3>{lang === "en" ? "GraphQL Access Token" : "GraphQL 访问令牌"}</h3>
+                    <h3>{lang === "en" ? "Backend Access Key" : "后端访问密钥"}</h3>
                     <p>
                       {lang === "en"
-                        ? "Paste a WordPress JWT here to authenticate Apollo requests without a browser session."
-                        : "粘贴 WordPress JWT 后，Apollo 请求可在没有浏览器会话的情况下进行身份验证。"}
+                        ? "Paste your backend access key here to authenticate platform requests without an active browser session."
+                        : "在此粘贴后端访问密钥，以便在没有活动浏览器会话时验证平台请求。"}
                     </p>
                   </div>
                   <span className={`auth-status ${apiToken.trim() ? "active" : "inactive"}`}>
@@ -1179,7 +1246,7 @@ export default function App() {
                 </div>
 
                 <label className="form-field auth-token-field">
-                  <span>{lang === "en" ? "JWT Token" : "JWT 令牌"}</span>
+                  <span>{lang === "en" ? "Access Key" : "访问密钥"}</span>
                   <textarea
                     rows="4"
                     value={apiToken}
@@ -1210,8 +1277,8 @@ export default function App() {
 
                 <p className="auth-help">
                   {lang === "en"
-                    ? "Use a token from a WordPress user that has read_projects or manage_construction_projects capability."
-                    : "请使用具有 read_projects 或 manage_construction_projects 权限的 WordPress 用户令牌。"}
+                    ? "Use a key tied to an account with project read/manage permissions."
+                    : "请使用绑定到具有项目读取/管理权限账户的访问密钥。"}
                 </p>
 
                 {tokenState !== "idle" && (
