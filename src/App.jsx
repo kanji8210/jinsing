@@ -243,6 +243,40 @@ const COPY = {
         },
       ],
     },
+    ui: {
+      healthy: "Healthy",
+      watch: "Watch",
+      atRisk: "At Risk",
+      actionRequired: "\u26a0 Action Required",
+      viewProject: "View Project",
+      manageProject: "Manage Project",
+      viewPublicPage: "View Public Page \u2197",
+      close: "Close",
+      budget: "Budget",
+      spent: "Spent",
+      progress: "Progress",
+      milestones: "Milestones",
+      start: "Start",
+      end: "End",
+      projectDocuments: "Project Documents",
+      constructionPlatform: "Construction Platform",
+      publicChip: "Public",
+      deliveryChip: "Delivery",
+      controlsChip: "Controls",
+      overviewChip: "Overview",
+      systemChip: "System",
+      status: {
+        active: "Active",
+        on_hold: "On Hold",
+        planning: "Planning",
+        completed: "Completed",
+        archived: "Archived",
+        in_progress: "In Progress",
+        not_started: "Not Started",
+        blocked: "Blocked",
+      },
+      docNames: ["Project Report", "License Document", "Render Design"],
+    },
   },
   zh: {
     languageLabel: "语言",
@@ -252,7 +286,7 @@ const COPY = {
       items: [
         { id: "dashboard", label: "仪表盘", icon: "dashboard" },
         { id: "projects", label: "项目", icon: "projects" },
-        { id: "供应商", label: "供应商", icon: "suppliers" },
+        { id: "suppliers", label: "供应商", icon: "suppliers" },
         { id: "employees", label: "临时员工", icon: "employees" },
         { id: "finance", label: "财务", icon: "finance" },
         { id: "reports", label: "报表", icon: "reports" },
@@ -288,6 +322,40 @@ const COPY = {
           text: "精准估算、透明追踪、每个阶段的预算控制。",
         },
       ],
+    },
+    ui: {
+      healthy: "健康",
+      watch: "关注",
+      atRisk: "有风险",
+      actionRequired: "\u26a0 需要处理",
+      viewProject: "查看项目",
+      manageProject: "管理项目",
+      viewPublicPage: "查看公开页面 \u2197",
+      close: "关闭",
+      budget: "预算",
+      spent: "已支出",
+      progress: "进度",
+      milestones: "里程碑",
+      start: "开始",
+      end: "结束",
+      projectDocuments: "项目文件",
+      constructionPlatform: "施工平台",
+      publicChip: "公开",
+      deliveryChip: "交付",
+      controlsChip: "控制",
+      overviewChip: "概览",
+      systemChip: "系统",
+      status: {
+        active: "进行中",
+        on_hold: "暂停",
+        planning: "规划中",
+        completed: "已完成",
+        archived: "已归档",
+        in_progress: "进行中",
+        not_started: "未开始",
+        blocked: "受阻",
+      },
+      docNames: ["项目报告", "许可证文件", "渲染设计"],
     },
   },
 };
@@ -458,7 +526,96 @@ const LANDING_CONTENT = {
   },
 };
 
-LANDING_CONTENT.zh = LANDING_CONTENT.en;
+LANDING_CONTENT.zh = {
+  topbar: {
+    docs: "文档",
+    login: "登录",
+  },
+  hero: {
+    eyebrow: "Jinsing 施工平台",
+    title: "面向 Jinsing 的项目管理",
+    description: "追踪项目、成本、供应商和现场团队。登录即可访问您的工作台。",
+    cta: "登录平台",
+  },
+  capabilities: [
+    { code: "PRJ", title: "项目追踪", text: "一览里程碑、进度和预算。" },
+    { code: "CST", title: "成本管理", text: "精准估算和透明支出追踪。" },
+    { code: "SUP", title: "供应商", text: "供应商记录、联系方式和付款条款。" },
+    { code: "FLD", title: "现场团队", text: "临时员工记录、技能和日薪。" },
+  ],
+  docsTitle: "文档",
+  docs: [
+    "API 参考 - GraphQL 架构、身份验证和速率限制",
+    "移动应用指南 - 离线设置、收据扫描和每日日志",
+    "集成教程 - M-Pesa、OCR 和天气数据流",
+    "合规工作流 - NCA、KRA、审计追踪和导出",
+    "数据库架构 - Jinsing 数据表与运营实体说明",
+    "视频演练 - 入职培训和技术团队的简短导览",
+  ],
+  docsCta: "浏览文档",
+  footerCta: "登录以访问所有平台功能。",
+  footerLogin: "登录",
+  signals: [
+    { label: "访问模式", value: "Jinsing", note: "为 Jinsing 项目团队提供的账号" },
+    { label: "API 接口", value: "GraphQL", note: "身份验证、架构模式和工作流示例" },
+    { label: "演示项目", value: "在线", note: "预加载的示例数据用于功能演示" },
+    { label: "反馈机制", value: "直接", note: "功能请求和错误报告直达产品团队" },
+  ],
+  metrics: [
+    { label: "文档模块", value: "6", note: "API、移动端、合规、集成" },
+    { label: "项目团队", value: "Jinsing", note: "施工、工程和项目管理人员" },
+    { label: "演示项目", value: "3", note: "预加载场景以探索核心工作流" },
+    { label: "响应时间", value: "24小时", note: "快速入职和反馈周期" },
+  ],
+  featuresTitle: "您的访问权限包括",
+  features: [
+    { code: "DOC", title: "完整文档", text: "API 指南、集成教程、工作流示例和实施说明。" },
+    { code: "KEY", title: "登录凭证", text: "仪表盘和沙盒访问的引导式入职流程。" },
+    { code: "DEM", title: "演示项目", text: "预加载的项目数据，让团队无需配置即可探索。" },
+    { code: "COM", title: "团队协作", text: "Jinsing 项目成员共享一个工作台，用于更新和讨论。" },
+    { code: "UPD", title: "更新通知", text: "第一时间了解集成、指南和工作流的最新动态。" },
+    { code: "BUG", title: "错误报告", text: "在平台演进过程中，直接向开发团队报告产品问题。" },
+  ],
+  stepsTitle: "2 分钟快速开始",
+  steps: [
+    { step: "01", title: "申请访问", text: "提交您的姓名、邮箱和职位，请求将由平台团队审核并完成入职。" },
+    { step: "02", title: "验证", text: "确认您的邮箱并收到文档和平台凭证的入职链接。" },
+    { step: "03", title: "登录并探索", text: "打开仪表盘，浏览文档，并使用 Jinsing 演示项目数据进行测试。" },
+  ],
+  audiencesTitle: "Jinsing 角色",
+  audiences: [
+    { role: "现场经理", text: "使用本地优先的工作流追踪费用、文档和现场团队。" },
+    { role: "系统团队", text: "通过文档化的 GraphQL 接口将 Jinsing 集成到现有系统。" },
+    { role: "建筑师/工程师", text: "在 RFI、检查和技术提交上进行协作。" },
+    { role: "项目经理", text: "在一处查看仪表盘、预测和合规快照。" },
+  ],
+  roadmapTitle: "平台路线图",
+  roadmapCopy: "Jinsing 正处于积极开发中。来自 Jinsing 项目团队的反馈直接影响优先功能和集成方向。",
+  roadmap: [
+    { status: "已上线", title: "AI 收据扫描", detail: "Beta 工作流在演示环境中可用" },
+    { status: "下一步", title: "M-Pesa 集成", detail: "当前路线图中的支付和对账流程" },
+    { status: "下一步", title: "移动端离线表单", detail: "为低网络连接现场环境设计的数据采集" },
+    { status: "未来", title: "NCA 直接申报", detail: "合规自动化计划在核心反馈轮次后推进" },
+  ],
+  feedbackCta: "申请功能",
+  testimonialsTitle: "平台能力",
+  testimonials: [
+    { quote: "文档足够具体，集成团队可以在两天内完成方案规划。", author: "平台团队", role: "文档与 API 接口" },
+    { quote: "演示环境预加载了真实的肯尼亚建筑项目数据，可供即时评估。", author: "平台团队", role: "演示环境" },
+  ],
+  faqTitle: "常见问题",
+  faq: [
+    { question: "谁可以申请访问？", answer: "访问权限为 Jinsing 项目人员提供。提交申请后，我们的团队将直接完成入职。" },
+    { question: "注册后我能获得什么？", answer: "您将收到入职链接、文档访问权限、沙盒凭证以及预加载了 Jinsing 相关项目数据的演示环境。" },
+    { question: "我可以将 Jinsing 用于实际项目吗？", answer: "文档、报告和工作流评估可以。全面推广取决于团队的运营准备评审。" },
+    { question: "如何报告问题或申请功能？", answer: "使用功能申请链接或直接联系平台团队，以便我们对反馈进行分类处理。" },
+  ],
+  finalTitle: "申请平台访问",
+  finalCopy: "提交申请，获取入职链接、文档访问权限和演示凭证。",
+  finalPrimary: "申请访问",
+  finalSecondary: "浏览文档",
+  finalNote: "访问权限仅向授权的 Jinsing 项目人员提供。",
+};
 
 export default function App() {
   const [lang, setLang] = useState("en");
@@ -620,7 +777,7 @@ export default function App() {
   function DocumentView({ documents }) {
     return (
       <div className="document-view">
-        <h3>Project Documents</h3>
+        <h3>{t.ui.projectDocuments}</h3>
         <ul>
           {documents.map((doc) => (
             <li key={doc.id}>
@@ -654,22 +811,23 @@ export default function App() {
 
   function ProjectCard({ project, onDetail }) {
     const health = getProjectHealth(project);
+    const healthLabel = { risk: t.ui.atRisk, watch: t.ui.watch, healthy: t.ui.healthy }[health.tone] ?? health.label;
     const actionRequired = project.milestones.some(
       (ms) => ms.status !== "completed" && new Date(ms.dueDate) < new Date()
     );
-    const viewUrl = getViewUrl(project);
     const manageUrl = getManageUrl(project.id);
+    const statusLabel = t.ui.status[project.status] ?? project.status.replace(/_/g, " ");
 
     return (
       <div className="project-card">
         <div className="project-card-header">
           <h3 className="project-card-name">{project.name}</h3>
-          <span className={`project-health ${health.tone}`}>{health.label}</span>
+          <span className={`project-health ${health.tone}`}>{healthLabel}</span>
         </div>
 
         <p className="project-status">
           <span className={`proj-status-pill proj-status-pill--${project.status}`}>
-            {project.status.replace(/_/g, " ")}
+            {statusLabel}
           </span>
         </p>
 
@@ -677,14 +835,14 @@ export default function App() {
           <div className="progress-bar" role="progressbar"
             aria-valuenow={project.progressPercent}
             aria-valuemin={0} aria-valuemax={100}
-            aria-label={`${project.progressPercent.toFixed(1)}% complete`}>
+            aria-label={`${project.progressPercent.toFixed(1)}%`}>
             <div className="progress-bar-fill" style={{ width: `${project.progressPercent}%` }} />
           </div>
           <span className="proj-pct">{formatPercent(project.progressPercent)}</span>
         </div>
 
         {actionRequired && (
-          <p className="action-required">⚠ Action Required</p>
+          <p className="action-required">{t.ui.actionRequired}</p>
         )}
 
         <div className="project-card-actions">
@@ -693,7 +851,7 @@ export default function App() {
             className="pc-btn pc-btn--primary"
             onClick={() => onDetail(project)}
           >
-            View Project
+            {t.ui.viewProject}
           </button>
           <a
             href={manageUrl}
@@ -701,7 +859,7 @@ export default function App() {
             target="_blank"
             rel="noopener noreferrer"
           >
-            Manage Project
+            {t.ui.manageProject}
           </a>
         </div>
       </div>
@@ -711,12 +869,13 @@ export default function App() {
   function ProjectDetailPanel({ project, onClose }) {
     if (!project) return null;
     const health = getProjectHealth(project);
+    const healthLabel = { risk: t.ui.atRisk, watch: t.ui.watch, healthy: t.ui.healthy }[health.tone] ?? health.label;
     const viewUrl = getViewUrl(project);
     const manageUrl = getManageUrl(project.id);
     const msTotal = project.milestones.length;
     const msDone  = project.milestones.filter((m) => m.status === "completed").length;
-
-    const statusIcon = { completed: "✓", in_progress: "◎", not_started: "○", blocked: "✕" };
+    const statusLabel = t.ui.status[project.status] ?? project.status.replace(/_/g, " ");
+    const statusIcon = { completed: "\u2713", in_progress: "\u25ce", not_started: "\u25cb", blocked: "\u2715" };
 
     return (
       <div className="pd-overlay" role="dialog" aria-modal="true"
@@ -727,13 +886,13 @@ export default function App() {
           <div className="pd-panel-head">
             <div className="pd-panel-title-group">
               <span className={`proj-status-pill proj-status-pill--${project.status}`}>
-                {project.status.replace(/_/g, " ")}
+                {statusLabel}
               </span>
               <h2 className="pd-title">{project.name}</h2>
-              <span className={`project-health ${health.tone}`}>{health.label}</span>
+              <span className={`project-health ${health.tone}`}>{healthLabel}</span>
             </div>
-            <button type="button" className="pd-close" onClick={onClose} aria-label="Close">
-              ✕
+            <button type="button" className="pd-close" onClick={onClose} aria-label={t.ui.close}>
+              \u2715
             </button>
           </div>
 
@@ -743,26 +902,26 @@ export default function App() {
 
           <div className="pd-stats">
             <div className="pd-stat">
-              <span className="pd-stat-label">Budget</span>
+              <span className="pd-stat-label">{t.ui.budget}</span>
               <span className="pd-stat-value">{formatCurrency(project.budgetTotal)}</span>
             </div>
             <div className="pd-stat">
-              <span className="pd-stat-label">Spent</span>
+              <span className="pd-stat-label">{t.ui.spent}</span>
               <span className="pd-stat-value">{formatCurrency(project.budgetSpent)}</span>
             </div>
             <div className="pd-stat">
-              <span className="pd-stat-label">Progress</span>
+              <span className="pd-stat-label">{t.ui.progress}</span>
               <span className="pd-stat-value gold">{formatPercent(project.progressPercent)}</span>
             </div>
             <div className="pd-stat">
-              <span className="pd-stat-label">Milestones</span>
+              <span className="pd-stat-label">{t.ui.milestones}</span>
               <span className="pd-stat-value">{msDone}/{msTotal}</span>
             </div>
           </div>
 
           <div className="pd-dates">
-            <span>Start: <strong>{project.startDate || "—"}</strong></span>
-            <span>End: <strong>{project.endDate || "—"}</strong></span>
+            <span>{t.ui.start}: <strong>{project.startDate || "\u2014"}</strong></span>
+            <span>{t.ui.end}: <strong>{project.endDate || "\u2014"}</strong></span>
           </div>
 
           <div className="pd-progress-row">
@@ -775,15 +934,18 @@ export default function App() {
 
           {project.milestones.length > 0 && (
             <div className="pd-milestones">
-              <h3 className="pd-section-title">Milestones</h3>
+              <h3 className="pd-section-title">{t.ui.milestones}</h3>
               <ul className="pd-ms-list">
-                {project.milestones.map((ms) => (
-                  <li key={ms.id} className={`pd-ms pd-ms--${ms.status}`}>
-                    <span className="pd-ms-icon">{statusIcon[ms.status] ?? "○"}</span>
-                    <span className="pd-ms-title">{ms.title}</span>
-                    <span className="pd-ms-date">{ms.dueDate}</span>
-                  </li>
-                ))}
+                {project.milestones.map((ms) => {
+                  const msStatusLabel = t.ui.status[ms.status] ?? ms.status.replace(/_/g, " ");
+                  return (
+                    <li key={ms.id} className={`pd-ms pd-ms--${ms.status}`}>
+                      <span className="pd-ms-icon">{statusIcon[ms.status] ?? "\u25cb"}</span>
+                      <span className="pd-ms-title">{ms.title}</span>
+                      <span className="pd-ms-date">{ms.dueDate}</span>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           )}
@@ -792,15 +954,15 @@ export default function App() {
             {viewUrl && (
               <a href={viewUrl} target="_blank" rel="noopener noreferrer"
                 className="pc-btn pc-btn--primary pd-action-btn">
-                View Public Page ↗
+                {t.ui.viewPublicPage}
               </a>
             )}
             <a href={manageUrl} target="_blank" rel="noopener noreferrer"
               className="pc-btn pc-btn--secondary pd-action-btn">
-              Manage Project ↗
+              {t.ui.manageProject} \u2197
             </a>
             <button type="button" className="pc-btn pc-btn--ghost pd-action-btn" onClick={onClose}>
-              Close
+              {t.ui.close}
             </button>
           </div>
         </div>
@@ -860,7 +1022,7 @@ export default function App() {
               <section className="lp-topbar panel">
                 <div className="lp-brand">
                   <strong>Jinsing</strong>
-                  <span>Construction Platform</span>
+                  <span>{t.ui.constructionPlatform}</span>
                 </div>
                 <div className="lp-topbar-actions">
                   <button
@@ -909,7 +1071,7 @@ export default function App() {
               <section id="lp-docs" className="panel lp-docs-section">
                 <div className="panel-head">
                   <h2 className="lp-section-title">{landing.docsTitle}</h2>
-                  <span className="chip">Public</span>
+                  <span className="chip">{t.ui.publicChip}</span>
                 </div>
                 <div className="lp-docs-list">
                   {landing.docs.map((item) => (
@@ -946,15 +1108,15 @@ export default function App() {
             <section className="panel panel-spacer">
               <div className="panel-head">
                 <h2>{pageTitle}</h2>
-                <span className="chip">{lang === "en" ? "Delivery" : "交付"}</span>
+                <span className="chip">{t.ui.deliveryChip}</span>
               </div>
               <p className="panel-copy">{pageBlurb}</p>
 
               <ProjectGrid projects={displayProjects} />
               <DocumentView documents={[
-                { id: 1, name: "Project Report", url: "/docs/report.pdf" },
-                { id: 2, name: "License Document", url: "/docs/license.pdf" },
-                { id: 3, name: "Render Design", url: "/docs/render.pdf" },
+                { id: 1, name: t.ui.docNames[0], url: "/docs/report.pdf" },
+                { id: 2, name: t.ui.docNames[1], url: "/docs/license.pdf" },
+                { id: 3, name: t.ui.docNames[2], url: "/docs/render.pdf" },
               ]} />
             </section>
           )}
@@ -971,7 +1133,7 @@ export default function App() {
             <section className="panel panel-spacer">
               <div className="panel-head">
                 <h2>{pageTitle}</h2>
-                <span className="chip">{lang === "en" ? "Controls" : "控制"}</span>
+                <span className="chip">{t.ui.controlsChip}</span>
               </div>
               <p className="panel-copy">{pageBlurb}</p>
             </section>
@@ -981,7 +1143,7 @@ export default function App() {
             <section className="panel panel-spacer">
               <div className="panel-head">
                 <h2>{pageTitle}</h2>
-                <span className="chip">{lang === "en" ? "Overview" : "概览"}</span>
+                <span className="chip">{t.ui.overviewChip}</span>
               </div>
               <p className="panel-copy">{pageBlurb}</p>
             </section>
@@ -991,7 +1153,7 @@ export default function App() {
             <section className="panel panel-spacer">
               <div className="panel-head">
                 <h2>{pageTitle}</h2>
-                <span className="chip">{lang === "en" ? "System" : "系统"}</span>
+                <span className="chip">{t.ui.systemChip}</span>
               </div>
               <p className="panel-copy">{pageBlurb}</p>
 
