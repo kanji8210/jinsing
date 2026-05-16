@@ -465,6 +465,7 @@ export default function App() {
   const [activeNav, setActiveNav] = useState("dashboard");
   const [apiToken, setApiToken] = useState("");
   const [tokenState, setTokenState] = useState("idle");
+  const [selectedProject, setSelectedProject] = useState(null);
   const t = COPY[lang];
   const landing = LANDING_CONTENT[lang] || LANDING_CONTENT.en;
   const isPortfolioView = activeNav === "projects" || activeNav === "dashboard";
@@ -633,33 +634,190 @@ export default function App() {
     );
   }
 
+  // Derive admin manage URL for a project row ID
+  function getManageUrl(projectId) {
+    const base =
+      typeof window !== "undefined" && window.jinsing?.adminUrl
+        ? window.jinsing.adminUrl
+        : "/wp-admin/";
+    return `${base}admin.php?page=construction-mgmt-project-management&id=${projectId}`;
+  }
+
+  // Derive public view URL for a project (CPT post)
+  function getViewUrl(project) {
+    if (project?.publicUrl) return project.publicUrl;
+    if (typeof window !== "undefined" && window.jinsing?.siteUrl) {
+      return `${window.jinsing.siteUrl}/projects/`;
+    }
+    return null;
+  }
+
+  function ProjectCard({ project, onDetail }) {
+    const health = getProjectHealth(project);
+    const actionRequired = project.milestones.some(
+      (ms) => ms.status !== "completed" && new Date(ms.dueDate) < new Date()
+    );
+    const viewUrl = getViewUrl(project);
+    const manageUrl = getManageUrl(project.id);
+
+    return (
+      <div className="project-card">
+        <div className="project-card-header">
+          <h3 className="project-card-name">{project.name}</h3>
+          <span className={`project-health ${health.tone}`}>{health.label}</span>
+        </div>
+
+        <p className="project-status">
+          <span className={`proj-status-pill proj-status-pill--${project.status}`}>
+            {project.status.replace(/_/g, " ")}
+          </span>
+        </p>
+
+        <div className="proj-progress-row">
+          <div className="progress-bar" role="progressbar"
+            aria-valuenow={project.progressPercent}
+            aria-valuemin={0} aria-valuemax={100}
+            aria-label={`${project.progressPercent.toFixed(1)}% complete`}>
+            <div className="progress-bar-fill" style={{ width: `${project.progressPercent}%` }} />
+          </div>
+          <span className="proj-pct">{formatPercent(project.progressPercent)}</span>
+        </div>
+
+        {actionRequired && (
+          <p className="action-required">⚠ Action Required</p>
+        )}
+
+        <div className="project-card-actions">
+          <button
+            type="button"
+            className="pc-btn pc-btn--primary"
+            onClick={() => onDetail(project)}
+          >
+            View Project
+          </button>
+          <a
+            href={manageUrl}
+            className="pc-btn pc-btn--secondary"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Manage Project
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  function ProjectDetailPanel({ project, onClose }) {
+    if (!project) return null;
+    const health = getProjectHealth(project);
+    const viewUrl = getViewUrl(project);
+    const manageUrl = getManageUrl(project.id);
+    const msTotal = project.milestones.length;
+    const msDone  = project.milestones.filter((m) => m.status === "completed").length;
+
+    const statusIcon = { completed: "✓", in_progress: "◎", not_started: "○", blocked: "✕" };
+
+    return (
+      <div className="pd-overlay" role="dialog" aria-modal="true"
+        aria-label={project.name}
+        onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      >
+        <div className="pd-panel">
+          <div className="pd-panel-head">
+            <div className="pd-panel-title-group">
+              <span className={`proj-status-pill proj-status-pill--${project.status}`}>
+                {project.status.replace(/_/g, " ")}
+              </span>
+              <h2 className="pd-title">{project.name}</h2>
+              <span className={`project-health ${health.tone}`}>{health.label}</span>
+            </div>
+            <button type="button" className="pd-close" onClick={onClose} aria-label="Close">
+              ✕
+            </button>
+          </div>
+
+          {project.description && (
+            <p className="pd-description">{project.description}</p>
+          )}
+
+          <div className="pd-stats">
+            <div className="pd-stat">
+              <span className="pd-stat-label">Budget</span>
+              <span className="pd-stat-value">{formatCurrency(project.budgetTotal)}</span>
+            </div>
+            <div className="pd-stat">
+              <span className="pd-stat-label">Spent</span>
+              <span className="pd-stat-value">{formatCurrency(project.budgetSpent)}</span>
+            </div>
+            <div className="pd-stat">
+              <span className="pd-stat-label">Progress</span>
+              <span className="pd-stat-value gold">{formatPercent(project.progressPercent)}</span>
+            </div>
+            <div className="pd-stat">
+              <span className="pd-stat-label">Milestones</span>
+              <span className="pd-stat-value">{msDone}/{msTotal}</span>
+            </div>
+          </div>
+
+          <div className="pd-dates">
+            <span>Start: <strong>{project.startDate || "—"}</strong></span>
+            <span>End: <strong>{project.endDate || "—"}</strong></span>
+          </div>
+
+          <div className="pd-progress-row">
+            <div className="progress-bar pd-progress-bar" role="progressbar"
+              aria-valuenow={project.progressPercent} aria-valuemin={0} aria-valuemax={100}>
+              <div className="progress-bar-fill" style={{ width: `${project.progressPercent}%` }} />
+            </div>
+            <span className="proj-pct gold">{formatPercent(project.progressPercent)}</span>
+          </div>
+
+          {project.milestones.length > 0 && (
+            <div className="pd-milestones">
+              <h3 className="pd-section-title">Milestones</h3>
+              <ul className="pd-ms-list">
+                {project.milestones.map((ms) => (
+                  <li key={ms.id} className={`pd-ms pd-ms--${ms.status}`}>
+                    <span className="pd-ms-icon">{statusIcon[ms.status] ?? "○"}</span>
+                    <span className="pd-ms-title">{ms.title}</span>
+                    <span className="pd-ms-date">{ms.dueDate}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <div className="pd-actions">
+            {viewUrl && (
+              <a href={viewUrl} target="_blank" rel="noopener noreferrer"
+                className="pc-btn pc-btn--primary pd-action-btn">
+                View Public Page ↗
+              </a>
+            )}
+            <a href={manageUrl} target="_blank" rel="noopener noreferrer"
+              className="pc-btn pc-btn--secondary pd-action-btn">
+              Manage Project ↗
+            </a>
+            <button type="button" className="pc-btn pc-btn--ghost pd-action-btn" onClick={onClose}>
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   function ProjectGrid({ projects }) {
     return (
       <div className="project-grid">
-        {projects.map((project) => {
-          const health = getProjectHealth(project);
-          const actionRequired = project.milestones.some(
-            (milestone) => milestone.status === "not_started" && new Date(milestone.dueDate) < new Date()
-          );
-
-          return (
-            <div key={project.id} className="project-card">
-              <div className="project-card-header">
-                <h3>{project.name}</h3>
-                <span className={`project-health ${health.tone}`}>{health.label}</span>
-              </div>
-              <p className="project-status">Status: {project.status}</p>
-              <div className="progress-bar">
-                <div
-                  className="progress-bar-fill"
-                  style={{ width: `${project.progressPercent}%` }}
-                ></div>
-              </div>
-              <p className="project-supervisor">Site Supervisor: {project.supervisor || "N/A"}</p>
-              {actionRequired && <p className="action-required">Action Required!</p>}
-            </div>
-          );
-        })}
+        {projects.map((project) => (
+          <ProjectCard
+            key={project.id}
+            project={project}
+            onDetail={setSelectedProject}
+          />
+        ))}
       </div>
     );
   }
@@ -775,6 +933,13 @@ export default function App() {
                 </button>
               </section>
             </>
+          )}
+
+          {selectedProject && (
+            <ProjectDetailPanel
+              project={selectedProject}
+              onClose={() => setSelectedProject(null)}
+            />
           )}
 
           {activeNav === "projects" && (
