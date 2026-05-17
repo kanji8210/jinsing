@@ -8,6 +8,7 @@ import CasualEmployeesPage from "./pages/CasualEmployeesPage";
 import DocsPage from "./pages/DocsPage";
 import AutoEntriesPage from "./pages/AutoEntriesPage";
 import apolloClient, {
+  GRAPHQL_ENDPOINT,
   clearStoredAuthToken,
   getStoredAuthToken,
   setStoredAuthToken,
@@ -49,6 +50,18 @@ function formatPercent(value) {
   const numericValue = Number(value ?? 0);
 
   return `${Number.isFinite(numericValue) ? numericValue.toFixed(1) : "0.0"}%`;
+}
+
+function getAuthLoginEndpoint() {
+  if (typeof window !== "undefined" && window.jinsing?.siteUrl) {
+    return `${window.jinsing.siteUrl}/wp-json/jinsing/v1/auth/login`;
+  }
+
+  if (GRAPHQL_ENDPOINT && GRAPHQL_ENDPOINT.endsWith("/graphql")) {
+    return GRAPHQL_ENDPOINT.replace(/\/graphql$/, "/wp-json/jinsing/v1/auth/login");
+  }
+
+  return "/wp-json/jinsing/v1/auth/login";
 }
 
 const PROJECT_TEMPLATES = [
@@ -251,6 +264,18 @@ const COPY = {
       loginRequiredBody: "This section is restricted. Please log in with your backend access key to continue.",
       loginNow: "Go to Login",
       selfRegistrationDisabled: "Self-registration is currently disabled.",
+      loginWithCredentials: "Sign in",
+      usernameLabel: "Username",
+      passwordLabel: "Password",
+      loginButton: "Sign In",
+      loggingIn: "Signing in...",
+      loginSuccess: "Login successful. Access is now unlocked.",
+      loginFailed: "Login failed. Check your username and password.",
+      accessKeyStored: "Access key stored",
+      noAccessKey: "No access key",
+      saveAccessKey: "Save Access Key",
+      clearAccessKey: "Clear Access Key",
+      clearDemoData: "Clear Demo Data",
       actionRequired: "\u26a0 Action Required",
       viewProject: "View Project",
       manageProject: "Manage Project",
@@ -335,6 +360,18 @@ const COPY = {
       loginRequiredBody: "此版块受限。请使用后端访问密钥登录后继续。",
       loginNow: "前往登录",
       selfRegistrationDisabled: "当前暂不开放自行注册。",
+      loginWithCredentials: "登录",
+      usernameLabel: "用户名",
+      passwordLabel: "密码",
+      loginButton: "登录",
+      loggingIn: "正在登录...",
+      loginSuccess: "登录成功，访问已解锁。",
+      loginFailed: "登录失败，请检查用户名和密码。",
+      accessKeyStored: "访问密钥已保存",
+      noAccessKey: "未设置访问密钥",
+      saveAccessKey: "保存访问密钥",
+      clearAccessKey: "清除访问密钥",
+      clearDemoData: "清除演示数据",
       actionRequired: "\u26a0 需要处理",
       viewProject: "查看项目",
       manageProject: "管理项目",
@@ -630,6 +667,10 @@ export default function App() {
   const [activeNav, setActiveNav] = useState("dashboard");
   const [apiToken, setApiToken] = useState("");
   const [tokenState, setTokenState] = useState("idle");
+  const [loginUsername, setLoginUsername] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [loginBusy, setLoginBusy] = useState(false);
+  const [loginError, setLoginError] = useState("");
   const [selectedProject, setSelectedProject] = useState(null);
   const t = COPY[lang];
   const landing = LANDING_CONTENT[lang] || LANDING_CONTENT.en;
@@ -675,6 +716,48 @@ export default function App() {
     setApiToken("");
     setTokenState("cleared");
     apolloClient.resetStore().catch(() => {});
+  }
+
+  async function handleFrontendLogin() {
+    const username = loginUsername.trim();
+    const password = loginPassword;
+
+    if (!username || !password) {
+      setLoginError(t.ui.loginFailed);
+      return;
+    }
+
+    setLoginBusy(true);
+    setLoginError("");
+
+    try {
+      const response = await fetch(getAuthLoginEndpoint(), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username, password }),
+      });
+
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok || !payload?.token) {
+        const message = payload?.message || payload?.error || t.ui.loginFailed;
+        setLoginError(message);
+        return;
+      }
+
+      setStoredAuthToken(payload.token);
+      setApiToken(payload.token);
+      setTokenState("saved");
+      setLoginPassword("");
+      setActiveNav("dashboard");
+      apolloClient.resetStore().catch(() => {});
+    } catch (_error) {
+      setLoginError(t.ui.loginFailed);
+    } finally {
+      setLoginBusy(false);
+    }
   }
 
   function scrollToSection(id) {
@@ -1230,6 +1313,61 @@ export default function App() {
               <div className="auth-panel">
                 <div className="auth-panel-head">
                   <div>
+                    <h3>{t.ui.loginWithCredentials}</h3>
+                    <p>
+                      {lang === "en"
+                        ? "Use your platform username and password to sign in from the frontend."
+                        : "使用您的平台用户名和密码从前端登录。"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="contact-row">
+                  <label className="form-field">
+                    <span>{t.ui.usernameLabel}</span>
+                    <input
+                      type="text"
+                      autoComplete="username"
+                      value={loginUsername}
+                      onChange={(event) => setLoginUsername(event.target.value)}
+                      placeholder={lang === "en" ? "Enter username" : "输入用户名"}
+                    />
+                  </label>
+                  <label className="form-field">
+                    <span>{t.ui.passwordLabel}</span>
+                    <input
+                      type="password"
+                      autoComplete="current-password"
+                      value={loginPassword}
+                      onChange={(event) => setLoginPassword(event.target.value)}
+                      placeholder={lang === "en" ? "Enter password" : "输入密码"}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          event.preventDefault();
+                          handleFrontendLogin();
+                        }
+                      }}
+                    />
+                  </label>
+                </div>
+
+                <div className="auth-actions">
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    onClick={handleFrontendLogin}
+                    disabled={loginBusy}
+                  >
+                    {loginBusy ? t.ui.loggingIn : t.ui.loginButton}
+                  </button>
+                </div>
+
+                {loginError && (
+                  <p className="auth-feedback">{loginError}</p>
+                )}
+
+                <div className="auth-panel-head">
+                  <div>
                     <h3>{lang === "en" ? "Backend Access Key" : "后端访问密钥"}</h3>
                     <p>
                       {lang === "en"
@@ -1239,12 +1377,8 @@ export default function App() {
                   </div>
                   <span className={`auth-status ${apiToken.trim() ? "active" : "inactive"}`}>
                     {apiToken.trim()
-                      ? lang === "en"
-                        ? "Token stored"
-                        : "令牌已保存"
-                      : lang === "en"
-                        ? "No token"
-                        : "未设置令牌"}
+                      ? t.ui.accessKeyStored
+                      : t.ui.noAccessKey}
                   </span>
                 </div>
 
@@ -1264,17 +1398,17 @@ export default function App() {
 
                 <div className="auth-actions">
                   <button type="button" className="btn-primary" onClick={handleSaveToken}>
-                    {lang === "en" ? "Save Token" : "保存令牌"}
+                    {t.ui.saveAccessKey}
                   </button>
                   <button type="button" className="cta-btn cta-secondary" onClick={handleClearToken}>
-                    {lang === "en" ? "Clear" : "清除"}
+                    {t.ui.clearAccessKey}
                   </button>
                   <button type="button" className="cta-btn cta-secondary" onClick={() => {
                     setApiToken("");
                     setTokenState("cleared");
                     apolloClient.resetStore().catch(() => {});
                   }}>
-                    {lang === "en" ? "Clear Demo Data" : "清除演示数据"}
+                    {t.ui.clearDemoData}
                   </button>
                 </div>
 
@@ -1287,12 +1421,10 @@ export default function App() {
                 {tokenState !== "idle" && (
                   <p className="auth-feedback">
                     {tokenState === "saved"
-                      ? lang === "en"
-                        ? "Token saved. Open Projects to use it."
-                        : "令牌已保存。打开项目页即可使用。"
+                      ? t.ui.loginSuccess
                       : lang === "en"
-                        ? "Token cleared."
-                        : "令牌已清除。"}
+                        ? "Access key cleared."
+                        : "访问密钥已清除。"}
                   </p>
                 )}
               </div>
