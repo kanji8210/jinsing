@@ -642,7 +642,7 @@ export default function App() {
   const hasLiveProjects = projects.length > 0;
   const displayProjects = hasLiveProjects ? projects : DEMO_PROJECTS;
   const isLoggedIn = Boolean(apiToken.trim());
-  const protectedNavIds = ["projects", "suppliers", "employees", "finance", "reports", "docs", "entries"];
+  const protectedNavIds = ["dashboard", "projects", "suppliers", "employees", "finance", "reports", "docs", "entries"];
   const requiresLogin = protectedNavIds.includes(activeNav);
   const isDemoMode = !loading && !hasLiveProjects;
   const portfolioSummary = getPortfolioSummary(displayProjects);
@@ -1047,7 +1047,9 @@ export default function App() {
           </div>
 
           {activeNav === "dashboard" && (
-            <>
+            <section className="gated-panel">
+              {!isLoggedIn && requiresLogin && <LoginRequiredOverlay />}
+              <div className={!isLoggedIn && requiresLogin ? "gated-blur" : undefined}>
               {/* Topbar */}
               <section className="lp-topbar panel">
                 <div className="lp-brand">
@@ -1124,7 +1126,8 @@ export default function App() {
                   {landing.footerLogin}
                 </button>
               </section>
-            </>
+              </div>
+            </section>
           )}
 
           {selectedProject && (
