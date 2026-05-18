@@ -1281,6 +1281,7 @@ function LoggedInDashboard({
   canEditProjects,
   onOpenProject,
   onEditProject,
+  onAddProject,
   onQuickStatusChange,
   quickStatusBusyId,
   t,
@@ -1316,6 +1317,14 @@ function LoggedInDashboard({
           <h2 className="logged-in-title">{heading}</h2>
           <p className="logged-in-sub">{subhead}</p>
         </div>
+        {canEditProjects && (
+          <button type="button" className="btn-primary add-project-btn" onClick={onAddProject}>
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" style={{ marginRight: "6px" }}>
+              <path fill="currentColor" d="M19 11h-6V5h-2v6H5v2h6v6h2v-6h6z"/>
+            </svg>
+            {lang === "en" ? "New Project" : "新建项目"}
+          </button>
+        )}
       </header>
 
       <section className="portfolio-section panel">
@@ -3067,6 +3076,121 @@ export default function App() {
           : `创建项目失败：${err.message}`,
       });
     }
+  }
+
+  function NewProjectModal({ onClose, onSubmit }) {
+    const [name, setName] = useState("");
+    const [description, setDescription] = useState("");
+    const [budgetTotal, setBudgetTotal] = useState("");
+    const [busy, setBusy] = useState(false);
+    const isEn = lang === "en";
+
+    const labels = isEn
+      ? {
+          title: "New Project",
+          nameLbl: "Project Name",
+          namePh: "Enter project name",
+          descLbl: "Description",
+          descPh: "Brief project description (optional)",
+          budgetLbl: "Budget (USD)",
+          budgetPh: "0",
+          cancel: "Cancel",
+          create: "Create Project",
+          creating: "Creating…",
+          required: "Project name is required.",
+        }
+      : {
+          title: "新建项目",
+          nameLbl: "项目名称",
+          namePh: "输入项目名称",
+          descLbl: "描述",
+          descPh: "简短描述（可选）",
+          budgetLbl: "预算（美元）",
+          budgetPh: "0",
+          cancel: "取消",
+          create: "创建项目",
+          creating: "创建中…",
+          required: "项目名称必填。",
+        };
+
+    async function handleSubmit(e) {
+      e.preventDefault();
+      if (!name.trim()) return;
+      setBusy(true);
+      try {
+        await onSubmit({ name, description, budgetTotal });
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    return (
+      <div
+        className="drawer-overlay"
+        role="dialog"
+        aria-modal="true"
+        aria-label={labels.title}
+        onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      >
+        <div className="new-project-modal panel">
+          <div className="drawer-header">
+            <h2 className="drawer-title">{labels.title}</h2>
+            <button type="button" className="drawer-close" onClick={onClose} aria-label="Close">✕</button>
+          </div>
+          <form className="new-project-form" onSubmit={handleSubmit} noValidate>
+            <div className="form-field">
+              <label className="form-label" htmlFor="np-name">{labels.nameLbl} <span aria-hidden="true">*</span></label>
+              <input
+                id="np-name"
+                type="text"
+                className="form-input"
+                placeholder={labels.namePh}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                autoFocus
+                autoComplete="off"
+              />
+            </div>
+            <div className="form-field">
+              <label className="form-label" htmlFor="np-desc">{labels.descLbl}</label>
+              <textarea
+                id="np-desc"
+                className="form-input"
+                placeholder={labels.descPh}
+                rows={3}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
+            </div>
+            <div className="form-field">
+              <label className="form-label" htmlFor="np-budget">{labels.budgetLbl}</label>
+              <input
+                id="np-budget"
+                type="number"
+                className="form-input"
+                placeholder={labels.budgetPh}
+                min="0"
+                step="1000"
+                value={budgetTotal}
+                onChange={(e) => setBudgetTotal(e.target.value)}
+              />
+            </div>
+            <p className="new-project-hint">
+              {isEn
+                ? "Additional fields (dates, client, location) can be filled in after creation."
+                : "其他字段（日期、客户、地点）可在创建后填写。"}
+            </p>
+            <div className="drawer-footer">
+              <button type="button" className="btn-ghost" onClick={onClose} disabled={busy}>{labels.cancel}</button>
+              <button type="submit" className="btn-primary" disabled={busy || !name.trim()}>
+                {busy ? labels.creating : labels.create}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
   }
 
   function ProjectCard({ project, onDetail, onManage, canManage }) {
