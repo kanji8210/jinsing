@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { gql } from "@apollo/client";
-import { useQuery } from "@apollo/client/react";
+import { useQuery, useMutation, useLazyQuery } from "@apollo/client/react";
 import SidebarNav from "./components/SidebarNav";
 import KpiCards from "./components/KpiCards";
 import SuppliersPage from "./pages/SuppliersPage";
@@ -10,8 +10,11 @@ import AutoEntriesPage from "./pages/AutoEntriesPage";
 import apolloClient, {
   GRAPHQL_ENDPOINT,
   clearStoredAuthToken,
+  clearStoredUser,
   getStoredAuthToken,
+  getStoredUser,
   setStoredAuthToken,
+  setStoredUser,
 } from "./lib/apollo";
 
 const GET_PROJECTS = gql`
@@ -26,11 +29,340 @@ const GET_PROJECTS = gql`
       progressPercent
       startDate
       endDate
+      metadata {
+        clientName
+        location
+      }
       milestones {
         id
         title
         dueDate
         status
+      }
+    }
+  }
+`;
+
+const UPDATE_PROJECT = gql`
+  mutation UpdateProject(
+    $id: Int!
+    $name: String
+    $description: String
+    $status: String
+    $budgetTotal: Float
+    $budgetSpent: Float
+    $startDate: String
+    $endDate: String
+    $clientName: String
+    $location: String
+    $contractType: String
+    $currency: String
+    $budgetContingencyPct: Float
+    $qualityStandard: String
+  ) {
+    updateProject(
+      input: {
+        id: $id
+        name: $name
+        description: $description
+        status: $status
+        budgetTotal: $budgetTotal
+        budgetSpent: $budgetSpent
+        startDate: $startDate
+        endDate: $endDate
+        clientName: $clientName
+        location: $location
+        contractType: $contractType
+        currency: $currency
+        budgetContingencyPct: $budgetContingencyPct
+        qualityStandard: $qualityStandard
+      }
+    ) {
+      success
+      message
+      project {
+        id
+        name
+        description
+        status
+        budgetTotal
+        budgetSpent
+        progressPercent
+        startDate
+        endDate
+        metadata {
+          clientName
+          location
+        }
+        milestones {
+          id
+          title
+          dueDate
+          status
+        }
+      }
+    }
+  }
+`;
+
+const GET_PROJECT_MANAGEMENT = gql`
+  query GetProjectManagement($id: Int!) {
+    project(id: $id) {
+      id
+      milestones {
+        id
+        title
+        description
+        phase
+        dueDate
+        completionDate
+        status
+        deliverables
+      }
+      team: teamMembers {
+        id
+        userId
+        userLogin
+        userEmail
+        displayName
+        role
+        responsibility
+      }
+      documents {
+        id
+        documentType
+        title
+        fileUrl
+        version
+        status
+        createdAt
+      }
+    }
+  }
+`;
+
+const CREATE_MILESTONE = gql`
+  mutation CreateMilestone(
+    $projectId: Int!
+    $title: String!
+    $dueDate: String!
+    $phase: String
+    $description: String
+    $deliverables: String
+  ) {
+    createMilestone(
+      input: {
+        projectId: $projectId
+        title: $title
+        dueDate: $dueDate
+        phase: $phase
+        description: $description
+        deliverables: $deliverables
+      }
+    ) {
+      success
+      message
+      milestone {
+        id
+        title
+        dueDate
+        status
+        phase
+      }
+    }
+  }
+`;
+
+const UPDATE_MILESTONE = gql`
+  mutation UpdateMilestone(
+    $id: Int!
+    $title: String
+    $description: String
+    $phase: String
+    $dueDate: String
+    $completionDate: String
+    $status: String
+    $deliverables: String
+  ) {
+    updateMilestone(
+      input: {
+        id: $id
+        title: $title
+        description: $description
+        phase: $phase
+        dueDate: $dueDate
+        completionDate: $completionDate
+        status: $status
+        deliverables: $deliverables
+      }
+    ) {
+      success
+      message
+      milestone {
+        id
+        title
+        dueDate
+        completionDate
+        status
+        phase
+      }
+    }
+  }
+`;
+
+const DELETE_MILESTONE = gql`
+  mutation DeleteMilestone($id: Int!) {
+    deleteMilestone(input: { id: $id }) {
+      success
+      deletedId
+      message
+    }
+  }
+`;
+
+const SEARCH_USERS = gql`
+  query SearchUsers($query: String!, $limit: Int) {
+    searchUsers(query: $query, limit: $limit) {
+      id
+      userLogin
+      userEmail
+      displayName
+    }
+  }
+`;
+
+const ASSIGN_TEAM_MEMBER = gql`
+  mutation AssignTeamMember(
+    $projectId: Int!
+    $userId: Int!
+    $role: String
+    $responsibility: String
+  ) {
+    assignTeamMember(
+      input: {
+        projectId: $projectId
+        userId: $userId
+        role: $role
+        responsibility: $responsibility
+      }
+    ) {
+      success
+      message
+      teamMember {
+        id
+        userId
+        displayName
+        userLogin
+        userEmail
+        role
+        responsibility
+      }
+    }
+  }
+`;
+
+const REMOVE_TEAM_MEMBER = gql`
+  mutation RemoveTeamMember($projectId: Int!, $userId: Int!) {
+    removeTeamMember(input: { projectId: $projectId, userId: $userId }) {
+      success
+      message
+    }
+  }
+`;
+
+const CREATE_PROJECT_DOCUMENT = gql`
+  mutation CreateProjectDocument(
+    $projectId: Int!
+    $title: String!
+    $documentType: String
+    $fileUrl: String
+    $version: String
+    $status: String
+  ) {
+    createProjectDocument(
+      input: {
+        projectId: $projectId
+        title: $title
+        documentType: $documentType
+        fileUrl: $fileUrl
+        version: $version
+        status: $status
+      }
+    ) {
+      success
+      message
+      document {
+        id
+        title
+        documentType
+        fileUrl
+        version
+        status
+      }
+    }
+  }
+`;
+
+const UPDATE_PROJECT_DOCUMENT = gql`
+  mutation UpdateProjectDocument(
+    $id: Int!
+    $title: String
+    $documentType: String
+    $fileUrl: String
+    $version: String
+    $status: String
+  ) {
+    updateProjectDocument(
+      input: {
+        id: $id
+        title: $title
+        documentType: $documentType
+        fileUrl: $fileUrl
+        version: $version
+        status: $status
+      }
+    ) {
+      success
+      message
+      document {
+        id
+        title
+        documentType
+        fileUrl
+        version
+        status
+      }
+    }
+  }
+`;
+
+const DELETE_PROJECT_DOCUMENT = gql`
+  mutation DeleteProjectDocument($id: Int!) {
+    deleteProjectDocument(input: { id: $id }) {
+      success
+      deletedId
+      message
+    }
+  }
+`;
+
+const CREATE_PROJECT = gql`
+  mutation CreateProject(
+    $name: String!
+    $description: String
+    $budgetTotal: Float
+  ) {
+    createProject(input: { name: $name, description: $description, budgetTotal: $budgetTotal }) {
+      project {
+        id
+        name
+        description
+        status
+        budgetTotal
+        budgetSpent
+        progressPercent
+        startDate
+        endDate
       }
     }
   }
@@ -662,6 +994,1707 @@ LANDING_CONTENT.zh = {
   finalNote: "访问权限仅向授权的 Jinsing 项目人员提供。",
 };
 
+function getUserInitials(user) {
+  const source =
+    (user?.displayName && user.displayName.trim()) ||
+    (user?.username && user.username.trim()) ||
+    "";
+
+  if (!source) {
+    return "?";
+  }
+
+  const parts = source.split(/\s+/).filter(Boolean);
+  if (parts.length === 1) {
+    return parts[0].slice(0, 2).toUpperCase();
+  }
+
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+function formatUserRole(user) {
+  const roles = Array.isArray(user?.roles) ? user.roles : [];
+  if (roles.length === 0) {
+    return "";
+  }
+
+  return roles[0]
+    .replace(/[_-]+/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function UserBadge({ user, lang, onLogout }) {
+  const displayName =
+    (user?.displayName && user.displayName.trim()) ||
+    (user?.username && user.username.trim()) ||
+    (lang === "en" ? "there" : "用户");
+  const role = formatUserRole(user);
+  const initials = getUserInitials(user);
+  const welcomeLabel = lang === "en" ? "Welcome" : "欢迎";
+  const logoutLabel = lang === "en" ? "Sign out" : "退出";
+
+  return (
+    <div
+      className="user-badge"
+      aria-label={`${welcomeLabel}, ${displayName}`}
+    >
+      <span className="user-badge-avatar" aria-hidden="true">{initials}</span>
+      <span className="user-badge-meta">
+        <span className="user-badge-welcome">
+          <svg
+            className="user-badge-icon"
+            viewBox="0 0 24 24"
+            width="14"
+            height="14"
+            aria-hidden="true"
+          >
+            <path
+              fill="currentColor"
+              d="M18.5 2.5a2.12 2.12 0 0 1 3 3l-7.3 7.3-3.3.3.3-3.3 7.3-7.3zm-7.7 3.2-1.4 1.4-5 5a3 3 0 0 0 0 4.2l.6.6-2.1 2.1 1.4 1.4 2.1-2.1.6.6a3 3 0 0 0 4.2 0l5-5-1.4-1.4-5 5a1 1 0 0 1-1.4 0l-2.8-2.8a1 1 0 0 1 0-1.4l5-5z"
+            />
+          </svg>
+          <span>
+            {welcomeLabel},&nbsp;
+            <strong className="user-badge-name">{displayName}</strong>
+          </span>
+        </span>
+        {role && <span className="user-badge-role">{role}</span>}
+      </span>
+      <button
+        type="button"
+        className="user-badge-logout"
+        onClick={onLogout}
+        title={logoutLabel}
+        aria-label={logoutLabel}
+      >
+        <svg
+          viewBox="0 0 24 24"
+          width="16"
+          height="16"
+          aria-hidden="true"
+        >
+          <path
+            fill="currentColor"
+            d="M10 17l1.4-1.4L8.8 13H20v-2H8.8l2.6-2.6L10 7l-5 5 5 5zM4 5h8V3H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h8v-2H4V5z"
+          />
+        </svg>
+        <span className="user-badge-logout-text">{logoutLabel}</span>
+      </button>
+    </div>
+  );
+}
+
+const PORTFOLIO_GRADIENTS = [
+  "linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #f59e0b 100%)",
+  "linear-gradient(135deg, #052e2b 0%, #0f766e 55%, #fbbf24 100%)",
+  "linear-gradient(135deg, #1a0b2e 0%, #6d28d9 55%, #f97316 100%)",
+  "linear-gradient(135deg, #0b1e3a 0%, #1d4ed8 50%, #f59e0b 100%)",
+  "linear-gradient(135deg, #1f1300 0%, #b45309 55%, #fde68a 100%)",
+  "linear-gradient(135deg, #0a1f1c 0%, #047857 50%, #f59e0b 100%)",
+];
+
+function getPortfolioGradient(project) {
+  const key = String(project?.id ?? project?.name ?? "0");
+  let hash = 0;
+  for (let i = 0; i < key.length; i += 1) {
+    hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
+  }
+  return PORTFOLIO_GRADIENTS[hash % PORTFOLIO_GRADIENTS.length];
+}
+
+function getProjectInitials(name) {
+  if (!name) return "JS";
+  const parts = String(name).split(/\s+/).filter(Boolean).slice(0, 2);
+  if (parts.length === 0) return "JS";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[1][0]).toUpperCase();
+}
+
+function formatDateRange(start, end, lang) {
+  const localeMap = { en: "en-US", zh: "zh-CN" };
+  const locale = localeMap[lang] || "en-US";
+  const fmt = (value) => {
+    if (!value) return null;
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return null;
+    return date.toLocaleDateString(locale, {
+      year: "numeric",
+      month: "short",
+      day: "2-digit",
+    });
+  };
+  const tbd = lang === "en" ? "TBD" : "待定";
+  return { start: fmt(start) || tbd, end: fmt(end) || tbd };
+}
+
+function ProjectPortfolioCard({
+  project,
+  lang,
+  canEdit,
+  onOpen,
+  onEdit,
+  onQuickStatusChange,
+  quickStatusBusy,
+  t,
+}) {
+  const gradient = getPortfolioGradient(project);
+  const initials = getProjectInitials(project?.name);
+  const statusLabel =
+    t.ui.status?.[project?.status] ??
+    String(project?.status || "").replace(/_/g, " ");
+  const progress = Number(project?.progressPercent ?? 0);
+  const { start, end } = formatDateRange(project?.startDate, project?.endDate, lang);
+  const clientName = project?.metadata?.clientName || "";
+  const location = project?.metadata?.location || "";
+  const description = project?.description || "";
+
+  const labels = lang === "en"
+    ? {
+        client: "Client",
+        location: "Location",
+        start: "Start",
+        completion: "Completion",
+        progress: "Progress",
+        view: "View details",
+        edit: "Edit details",
+        quickStatus: "Quick status",
+      }
+    : {
+        client: "客户",
+        location: "地点",
+        start: "开始",
+        completion: "完成",
+        progress: "进度",
+        view: "查看详情",
+        edit: "编辑详情",
+        quickStatus: "快速状态",
+      };
+
+  return (
+    <article className="portfolio-card panel">
+      <div
+        className="portfolio-card-hero"
+        style={{ backgroundImage: gradient }}
+        aria-hidden="true"
+      >
+        <span className="portfolio-card-initials">{initials}</span>
+        <span className={`portfolio-card-status portfolio-card-status--${project?.status}`}>
+          {statusLabel}
+        </span>
+      </div>
+
+      <div className="portfolio-card-body">
+        <h3 className="portfolio-card-title">{project?.name}</h3>
+        {description && (
+          <p className="portfolio-card-desc">{description}</p>
+        )}
+
+        <dl className="portfolio-card-meta">
+          {clientName && (
+            <div>
+              <dt>{labels.client}</dt>
+              <dd>{clientName}</dd>
+            </div>
+          )}
+          {location && (
+            <div>
+              <dt>{labels.location}</dt>
+              <dd>{location}</dd>
+            </div>
+          )}
+          <div>
+            <dt>{labels.start}</dt>
+            <dd>{start}</dd>
+          </div>
+          <div>
+            <dt>{labels.completion}</dt>
+            <dd>{end}</dd>
+          </div>
+        </dl>
+
+        <div className="portfolio-card-progress">
+          <div className="portfolio-card-progress-head">
+            <span>{labels.progress}</span>
+            <span>{progress.toFixed(1)}%</span>
+          </div>
+          <div className="progress-bar" role="progressbar"
+            aria-valuenow={progress}
+            aria-valuemin={0}
+            aria-valuemax={100}
+          >
+            <div
+              className="progress-bar-fill"
+              style={{ width: `${Math.max(0, Math.min(100, progress))}%` }}
+            />
+          </div>
+        </div>
+
+        <div className="portfolio-card-actions">
+          <button
+            type="button"
+            className="pc-btn pc-btn--primary"
+            onClick={() => onOpen?.(project)}
+          >
+            {labels.view}
+          </button>
+          {canEdit && (
+            <button
+              type="button"
+              className="pc-btn pc-btn--secondary"
+              onClick={() => onEdit?.(project)}
+            >
+              <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+                <path fill="currentColor" d="M3 17.25V21h3.75l11-11-3.75-3.75-11 11zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.84 1.83 3.75 3.75 1.84-1.83z"/>
+              </svg>
+              {labels.edit}
+            </button>
+          )}
+          {canEdit && (
+            <label className="portfolio-quick-status">
+              <span>{labels.quickStatus}</span>
+              <select
+                value={project?.status || "planning"}
+                disabled={quickStatusBusy}
+                onChange={(e) => onQuickStatusChange?.(project, e.target.value)}
+              >
+                {PROJECT_STATUSES.map((status) => (
+                  <option key={status} value={status}>
+                    {t.ui.status?.[status] ?? status.replace(/_/g, " ")}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function LoggedInDashboard({
+  user,
+  lang,
+  loading,
+  error,
+  projects,
+  isDemoMode,
+  canEditProjects,
+  onOpenProject,
+  onEditProject,
+  onQuickStatusChange,
+  quickStatusBusyId,
+  t,
+}) {
+  const displayName =
+    (user?.displayName && user.displayName.trim()) ||
+    (user?.username && user.username.trim()) ||
+    (lang === "en" ? "there" : "用户");
+
+  const heading = lang === "en"
+    ? `Welcome back, ${displayName}`
+    : `欢迎回来，${displayName}`;
+  const subhead = lang === "en"
+    ? "Here is a portfolio snapshot of the projects you can access."
+    : "以下是您可访问项目的组合概览。";
+  const portfolioTitle = lang === "en" ? "Project Portfolio" : "项目组合";
+  const emptyState = lang === "en"
+    ? "No projects to display yet."
+    : "暂无可显示的项目。";
+  const demoNote = lang === "en"
+    ? "Showing demo data. Live projects will appear here once available."
+    : "显示演示数据。一旦有可用项目，将显示在此处。";
+  const loadingText = lang === "en" ? "Loading projects…" : "加载项目中…";
+  const errorText = lang === "en"
+    ? "Unable to load live projects. Showing the latest snapshot instead."
+    : "无法加载实时项目。改为显示最近的快照。";
+
+  return (
+    <section className="logged-in-dashboard">
+      <header className="logged-in-header panel">
+        <div>
+          <p className="eyebrow">{lang === "en" ? "Dashboard" : "仪表盘"}</p>
+          <h2 className="logged-in-title">{heading}</h2>
+          <p className="logged-in-sub">{subhead}</p>
+        </div>
+      </header>
+
+      <section className="portfolio-section panel">
+        <div className="panel-head">
+          <h3 className="lp-section-title">{portfolioTitle}</h3>
+          {isDemoMode && (
+            <span className="chip chip--warn" title={demoNote}>
+              {lang === "en" ? "Demo data" : "演示数据"}
+            </span>
+          )}
+        </div>
+
+        {loading && <p className="panel-copy">{loadingText}</p>}
+        {error && !loading && <p className="panel-copy">{errorText}</p>}
+
+        {projects.length === 0 ? (
+          <p className="panel-copy">{emptyState}</p>
+        ) : (
+          <div className="portfolio-grid">
+            {projects.map((project) => (
+              <ProjectPortfolioCard
+                key={project.id}
+                project={project}
+                lang={lang}
+                canEdit={canEditProjects}
+                onOpen={onOpenProject}
+                onEdit={onEditProject}
+                onQuickStatusChange={onQuickStatusChange}
+                quickStatusBusy={Number(quickStatusBusyId) === Number(project.id)}
+                t={t}
+              />
+            ))}
+          </div>
+        )}
+      </section>
+    </section>
+  );
+}
+
+const PROJECT_STATUSES = ["planning", "active", "on_hold", "completed", "archived"];
+const CONTRACT_TYPES = ["fixed_price", "time_materials", "design_build", "other"];
+
+function ToastStack({ toasts, onDismiss }) {
+  if (!toasts || toasts.length === 0) return null;
+  return (
+    <div className="toast-stack" role="status" aria-live="polite">
+      {toasts.map((toast) => (
+        <div key={toast.id} className={`toast toast--${toast.kind || "info"}`}>
+          <span className="toast-msg">{toast.message}</span>
+          <button
+            type="button"
+            className="toast-close"
+            onClick={() => onDismiss(toast.id)}
+            aria-label="Dismiss"
+          >
+            ×
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+const MILESTONE_STATUSES = ["not_started", "in_progress", "on_hold", "completed", "at_risk"];
+
+function getMilestoneLabels(lang) {
+  return lang === "en"
+    ? {
+        not_started: "Not started",
+        in_progress: "In progress",
+        on_hold: "On hold",
+        completed: "Completed",
+        at_risk: "At risk",
+      }
+    : {
+        not_started: "未开始",
+        in_progress: "进行中",
+        on_hold: "已暂停",
+        completed: "已完成",
+        at_risk: "存在风险",
+      };
+}
+
+function EditProjectDrawer({ project, lang, onClose, onSaved, pushToast }) {
+  const [tab, setTab] = useState("details");
+  const [unsavedDetails, setUnsavedDetails] = useState(false);
+
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === "Escape") handleClose();
+    };
+    document.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = "";
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function handleClose() {
+    if (unsavedDetails) {
+      const ok = window.confirm(
+        lang === "en"
+          ? "Discard unsaved changes?"
+          : "放弃未保存的更改？"
+      );
+      if (!ok) return;
+    }
+    onClose?.();
+  }
+
+  const tabLabels = lang === "en"
+    ? { details: "Details", milestones: "Milestones", team: "Team", documents: "Documents" }
+    : { details: "详情", milestones: "里程碑", team: "团队", documents: "文档" };
+
+  const headerTitle = lang === "en" ? "Manage Project" : "管理项目";
+  const headerSub = lang === "en"
+    ? "Edit project details, plan milestones, and manage the team."
+    : "编辑项目详情、规划里程碑并管理团队。";
+
+  return (
+    <div className="drawer-overlay" onClick={handleClose}>
+      <aside
+        className="drawer-panel drawer-panel--wide"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="edit-project-title"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <header className="drawer-header">
+          <div>
+            <p className="eyebrow">{lang === "en" ? "Admin" : "管理员"}</p>
+            <h2 id="edit-project-title" className="drawer-title">
+              {headerTitle}
+            </h2>
+            <p className="drawer-sub">
+              {project?.name ? <strong>{project.name}</strong> : null}
+              {project?.name ? " — " : ""}
+              {headerSub}
+            </p>
+          </div>
+          <button
+            type="button"
+            className="drawer-close"
+            onClick={handleClose}
+            aria-label={lang === "en" ? "Close" : "关闭"}
+          >
+            ×
+          </button>
+        </header>
+
+        <nav className="drawer-tabs" role="tablist">
+          {(["details", "milestones", "team", "documents"]).map((id) => (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              aria-selected={tab === id}
+              className={`drawer-tab ${tab === id ? "drawer-tab--active" : ""}`}
+              onClick={() => setTab(id)}
+            >
+              {tabLabels[id]}
+              {id === "details" && unsavedDetails && (
+                <span className="drawer-tab-dot" aria-label="unsaved" />
+              )}
+            </button>
+          ))}
+        </nav>
+
+        <div className="drawer-body">
+          {tab === "details" && (
+            <DetailsTab
+              project={project}
+              lang={lang}
+              onSaved={onSaved}
+              onClose={onClose}
+              pushToast={pushToast}
+              onDirtyChange={setUnsavedDetails}
+            />
+          )}
+          {tab === "milestones" && (
+            <MilestonesTab
+              project={project}
+              lang={lang}
+              pushToast={pushToast}
+            />
+          )}
+          {tab === "team" && (
+            <TeamTab
+              project={project}
+              lang={lang}
+              pushToast={pushToast}
+            />
+          )}
+          {tab === "documents" && (
+            <DocumentsTab
+              project={project}
+              lang={lang}
+              pushToast={pushToast}
+            />
+          )}
+        </div>
+      </aside>
+    </div>
+  );
+}
+
+function BudgetBurnDownMini({ budgetTotal, budgetSpent, startDate, endDate, lang }) {
+  const total = Math.max(0, Number(budgetTotal || 0));
+  const spent = Math.max(0, Number(budgetSpent || 0));
+  const spentRatio = total > 0 ? Math.min(1, spent / total) : 0;
+
+  const elapsedRatio = (() => {
+    if (!startDate || !endDate) return 0;
+    const start = new Date(startDate).getTime();
+    const end = new Date(endDate).getTime();
+    const now = Date.now();
+    if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return 0;
+    return Math.min(1, Math.max(0, (now - start) / (end - start)));
+  })();
+
+  const labels = lang === "en"
+    ? { title: "Budget burn-down", planned: "Planned burn", actual: "Actual spend" }
+    : { title: "预算消耗", planned: "计划消耗", actual: "实际支出" };
+
+  return (
+    <section className="burn-card" aria-label={labels.title}>
+      <div className="burn-head">
+        <strong>{labels.title}</strong>
+        <span>{formatCurrency(total)}</span>
+      </div>
+      <div className="burn-track">
+        <span className="burn-marker burn-marker--planned" style={{ left: `${elapsedRatio * 100}%` }} />
+        <span className="burn-marker burn-marker--actual" style={{ left: `${spentRatio * 100}%` }} />
+      </div>
+      <div className="burn-legend">
+        <span><i className="dot dot--planned" />{labels.planned}</span>
+        <span><i className="dot dot--actual" />{labels.actual}</span>
+      </div>
+    </section>
+  );
+}
+
+function DetailsTab({ project, lang, onSaved, onClose, pushToast, onDirtyChange }) {
+  const [updateProject, { loading: saving }] = useMutation(UPDATE_PROJECT);
+  const [archiving, setArchiving] = useState(false);
+  const [form, setForm] = useState(() => ({
+    name: project?.name || "",
+    description: project?.description || "",
+    status: project?.status || "planning",
+    budgetTotal: project?.budgetTotal ?? "",
+    startDate: project?.startDate || "",
+    endDate: project?.endDate || "",
+    clientName: project?.metadata?.clientName || "",
+    location: project?.metadata?.location || "",
+    contractType: project?.metadata?.contractType || "fixed_price",
+    currency: project?.metadata?.currency || "USD",
+  }));
+  const [errors, setErrors] = useState({});
+  const [dirty, setDirtyState] = useState(false);
+
+  const setDirty = (next) => {
+    setDirtyState(next);
+    onDirtyChange?.(next);
+  };
+
+  function setField(key, value) {
+    setForm((prev) => ({ ...prev, [key]: value }));
+    setDirty(true);
+    if (errors[key]) setErrors((prev) => ({ ...prev, [key]: undefined }));
+  }
+
+  function validate() {
+    const next = {};
+    if (!form.name.trim()) {
+      next.name = lang === "en" ? "Name is required" : "名称为必填项";
+    }
+    if (form.budgetTotal !== "" && Number.isNaN(Number(form.budgetTotal))) {
+      next.budgetTotal = lang === "en" ? "Must be a number" : "必须为数字";
+    }
+    if (form.startDate && form.endDate && form.endDate < form.startDate) {
+      next.endDate = lang === "en" ? "End must be after start" : "结束必须在开始之后";
+    }
+    setErrors(next);
+    return Object.keys(next).length === 0;
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (!validate()) return;
+
+    try {
+      const result = await updateProject({
+        variables: {
+          id: Number(project.id),
+          name: form.name.trim(),
+          description: form.description,
+          status: form.status,
+          budgetTotal: form.budgetTotal === "" ? null : Number(form.budgetTotal),
+          startDate: form.startDate || null,
+          endDate: form.endDate || null,
+          clientName: form.clientName,
+          location: form.location,
+          contractType: form.contractType,
+          currency: form.currency,
+        },
+        refetchQueries: [{ query: GET_PROJECTS }],
+        awaitRefetchQueries: true,
+      });
+      const payload = result?.data?.updateProject;
+      if (payload?.success) {
+        pushToast?.({
+          kind: "success",
+          message:
+            lang === "en"
+              ? `Saved "${form.name.trim()}"`
+              : `已保存"${form.name.trim()}"`,
+        });
+        setDirty(false);
+        onSaved?.(payload.project);
+        onClose?.();
+      } else {
+        pushToast?.({
+          kind: "error",
+          message: payload?.message || (lang === "en" ? "Save failed" : "保存失败"),
+        });
+      }
+    } catch (err) {
+      pushToast?.({
+        kind: "error",
+        message:
+          err?.message || (lang === "en" ? "Network error" : "网络错误"),
+      });
+    }
+  }
+
+  const labels = lang === "en"
+    ? {
+        name: "Project name",
+        description: "Description",
+        status: "Status",
+        budget: "Total budget",
+        startDate: "Start date",
+        endDate: "Completion date",
+        client: "Client name",
+        location: "Location",
+        contract: "Contract type",
+        currency: "Currency",
+        cancel: "Cancel",
+        archive: "Archive",
+        archiving: "Archiving…",
+        save: "Save changes",
+        saving: "Saving…",
+        sectionInfo: "Project information",
+        sectionSchedule: "Schedule & budget",
+        sectionMeta: "Client & contract",
+      }
+    : {
+        name: "项目名称",
+        description: "描述",
+        status: "状态",
+        budget: "总预算",
+        startDate: "开始日期",
+        endDate: "完成日期",
+        client: "客户名称",
+        location: "地点",
+        contract: "合同类型",
+        currency: "货币",
+        cancel: "取消",
+        archive: "归档",
+        archiving: "归档中…",
+        save: "保存更改",
+        saving: "保存中…",
+        sectionInfo: "项目信息",
+        sectionSchedule: "进度与预算",
+        sectionMeta: "客户与合同",
+      };
+
+  const statusLabel = (s) => {
+    const map = lang === "en"
+      ? { planning: "Planning", active: "Active", on_hold: "On hold", completed: "Completed", archived: "Archived" }
+      : { planning: "规划中", active: "进行中", on_hold: "已暂停", completed: "已完成", archived: "已归档" };
+    return map[s] || s;
+  };
+  const contractLabel = (c) => {
+    const map = lang === "en"
+      ? { fixed_price: "Fixed price", time_materials: "Time & materials", design_build: "Design–build", other: "Other" }
+      : { fixed_price: "固定价格", time_materials: "工时与材料", design_build: "设计-建造", other: "其他" };
+    return map[c] || c;
+  };
+
+  async function handleArchive() {
+    const ok = window.confirm(
+      lang === "en"
+        ? "Archive this project? It will be hidden from active worklists."
+        : "确认归档此项目？它将从活动列表中隐藏。"
+    );
+    if (!ok) return;
+
+    setArchiving(true);
+    try {
+      const result = await updateProject({
+        variables: { id: Number(project.id), status: "archived" },
+        refetchQueries: [{ query: GET_PROJECTS }],
+        awaitRefetchQueries: true,
+      });
+      const payload = result?.data?.updateProject;
+      if (!payload?.success) {
+        throw new Error(payload?.message || "Archive failed");
+      }
+      pushToast?.({
+        kind: "success",
+        message: lang === "en" ? "Project archived." : "项目已归档。",
+      });
+      onSaved?.(payload.project);
+      onClose?.();
+    } catch (err) {
+      pushToast?.({ kind: "error", message: err?.message || "Network error" });
+    } finally {
+      setArchiving(false);
+    }
+  }
+
+  return (
+    <form className="drawer-form" onSubmit={handleSubmit} noValidate>
+      <fieldset className="drawer-section">
+        <legend>{labels.sectionInfo}</legend>
+
+        <label className="field">
+          <span className="field-label">{labels.name} *</span>
+          <input
+            type="text"
+            value={form.name}
+            onChange={(e) => setField("name", e.target.value)}
+            onBlur={() => validate()}
+            required
+            autoFocus
+          />
+          {errors.name && <span className="field-error">{errors.name}</span>}
+        </label>
+
+        <label className="field">
+          <span className="field-label">{labels.description}</span>
+          <textarea
+            rows={4}
+            value={form.description}
+            onChange={(e) => setField("description", e.target.value)}
+          />
+        </label>
+
+        <label className="field">
+          <span className="field-label">{labels.status}</span>
+          <select
+            value={form.status}
+            onChange={(e) => setField("status", e.target.value)}
+          >
+            {PROJECT_STATUSES.map((s) => (
+              <option key={s} value={s}>{statusLabel(s)}</option>
+            ))}
+          </select>
+        </label>
+      </fieldset>
+
+      <fieldset className="drawer-section">
+        <legend>{labels.sectionSchedule}</legend>
+
+        <div className="field-grid">
+          <label className="field">
+            <span className="field-label">{labels.startDate}</span>
+            <input
+              type="date"
+              value={form.startDate || ""}
+              onChange={(e) => setField("startDate", e.target.value)}
+            />
+          </label>
+
+          <label className="field">
+            <span className="field-label">{labels.endDate}</span>
+            <input
+              type="date"
+              value={form.endDate || ""}
+              onChange={(e) => setField("endDate", e.target.value)}
+              onBlur={() => validate()}
+            />
+            {errors.endDate && <span className="field-error">{errors.endDate}</span>}
+          </label>
+        </div>
+
+        <div className="field-grid">
+          <label className="field">
+            <span className="field-label">{labels.budget}</span>
+            <input
+              type="number"
+              inputMode="decimal"
+              min="0"
+              step="0.01"
+              value={form.budgetTotal ?? ""}
+              onChange={(e) => setField("budgetTotal", e.target.value)}
+              onBlur={() => validate()}
+            />
+            {errors.budgetTotal && (
+              <span className="field-error">{errors.budgetTotal}</span>
+            )}
+          </label>
+
+          <label className="field">
+            <span className="field-label">{labels.currency}</span>
+            <input
+              type="text"
+              maxLength={3}
+              value={form.currency || ""}
+              onChange={(e) => setField("currency", e.target.value.toUpperCase())}
+            />
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset className="drawer-section">
+        <legend>{labels.sectionMeta}</legend>
+
+        <label className="field">
+          <span className="field-label">{labels.client}</span>
+          <input
+            type="text"
+            value={form.clientName}
+            onChange={(e) => setField("clientName", e.target.value)}
+          />
+        </label>
+
+        <label className="field">
+          <span className="field-label">{labels.location}</span>
+          <input
+            type="text"
+            value={form.location}
+            onChange={(e) => setField("location", e.target.value)}
+          />
+        </label>
+
+        <label className="field">
+          <span className="field-label">{labels.contract}</span>
+          <select
+            value={form.contractType}
+            onChange={(e) => setField("contractType", e.target.value)}
+          >
+            {CONTRACT_TYPES.map((c) => (
+              <option key={c} value={c}>{contractLabel(c)}</option>
+            ))}
+          </select>
+        </label>
+      </fieldset>
+
+      <BudgetBurnDownMini
+        budgetTotal={form.budgetTotal}
+        budgetSpent={project?.budgetSpent}
+        startDate={form.startDate}
+        endDate={form.endDate}
+        lang={lang}
+      />
+
+      <footer className="drawer-footer">
+        {form.status !== "archived" && (
+          <button
+            type="button"
+            className="pc-btn pc-btn--danger"
+            onClick={handleArchive}
+            disabled={saving || archiving}
+          >
+            {archiving ? labels.archiving : labels.archive}
+          </button>
+        )}
+        <button
+          type="button"
+          className="pc-btn pc-btn--secondary"
+          onClick={onClose}
+          disabled={saving || archiving}
+        >
+          {labels.cancel}
+        </button>
+        <button
+          type="submit"
+          className="pc-btn pc-btn--primary"
+          disabled={saving || archiving || !dirty}
+        >
+          {saving ? labels.saving : labels.save}
+        </button>
+      </footer>
+
+    </form>
+  );
+}
+
+function MilestonesTab({ project, lang, pushToast }) {
+  const { data, loading, error, refetch } = useQuery(GET_PROJECT_MANAGEMENT, {
+    variables: { id: Number(project.id) },
+    fetchPolicy: "cache-and-network",
+  });
+  const [createMilestone, { loading: creating }] = useMutation(CREATE_MILESTONE);
+  const [updateMilestone] = useMutation(UPDATE_MILESTONE);
+  const [deleteMilestone] = useMutation(DELETE_MILESTONE);
+
+  const [form, setForm] = useState({ title: "", dueDate: "", phase: "" });
+  const [busyId, setBusyId] = useState(null);
+  const [manualOrder, setManualOrder] = useState([]);
+
+  const labels = lang === "en"
+    ? {
+        title: "Milestones",
+        sub: "Plan and track key project milestones.",
+        addHead: "Add milestone",
+        nameField: "Title",
+        dueField: "Due date",
+        phaseField: "Phase",
+        add: "Add",
+        adding: "Adding…",
+        empty: "No milestones yet. Add the first one above.",
+        loading: "Loading milestones…",
+        error: "Unable to load milestones.",
+        delete: "Delete",
+        confirmDelete: "Delete this milestone?",
+        overdue: "Overdue",
+        complete: "Mark complete",
+        up: "Move up",
+        down: "Move down",
+      }
+    : {
+        title: "里程碑",
+        sub: "规划并跟踪关键项目里程碑。",
+        addHead: "添加里程碑",
+        nameField: "标题",
+        dueField: "截止日期",
+        phaseField: "阶段",
+        add: "添加",
+        adding: "添加中…",
+        empty: "暂无里程碑。在上方添加第一个。",
+        loading: "加载中…",
+        error: "无法加载里程碑。",
+        delete: "删除",
+        confirmDelete: "删除此里程碑？",
+        overdue: "已逾期",
+        complete: "标记完成",
+        up: "上移",
+        down: "下移",
+      };
+
+  const statusMap = getMilestoneLabels(lang);
+  const milestones = data?.project?.milestones || [];
+  const milestoneKey = `milestone-order-${project?.id}`;
+
+  useEffect(() => {
+    const ids = milestones.map((m) => Number(m.id));
+    if (ids.length === 0) {
+      setManualOrder([]);
+      return;
+    }
+
+    let nextOrder = ids;
+    if (typeof window !== "undefined") {
+      try {
+        const raw = window.localStorage.getItem(milestoneKey);
+        const saved = raw ? JSON.parse(raw) : [];
+        if (Array.isArray(saved) && saved.length > 0) {
+          const validSaved = saved.filter((id) => ids.includes(Number(id))).map((id) => Number(id));
+          const missing = ids.filter((id) => !validSaved.includes(id));
+          nextOrder = [...validSaved, ...missing];
+        }
+      } catch {
+        nextOrder = ids;
+      }
+    }
+    setManualOrder(nextOrder);
+  }, [milestones, milestoneKey]);
+
+  const orderedMilestones = useMemo(() => {
+    if (!manualOrder.length) return milestones;
+    const byId = new Map(milestones.map((m) => [Number(m.id), m]));
+    const sorted = manualOrder.map((id) => byId.get(Number(id))).filter(Boolean);
+    const leftovers = milestones.filter((m) => !manualOrder.includes(Number(m.id)));
+    return [...sorted, ...leftovers];
+  }, [milestones, manualOrder]);
+
+  const today = new Date().toISOString().slice(0, 10);
+
+  function moveMilestone(id, direction) {
+    setManualOrder((prev) => {
+      const copy = prev.length ? [...prev] : milestones.map((m) => Number(m.id));
+      const index = copy.indexOf(Number(id));
+      if (index < 0) return copy;
+      const target = direction === "up" ? index - 1 : index + 1;
+      if (target < 0 || target >= copy.length) return copy;
+      const [item] = copy.splice(index, 1);
+      copy.splice(target, 0, item);
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(milestoneKey, JSON.stringify(copy));
+      }
+      return copy;
+    });
+  }
+
+  async function handleAdd(e) {
+    e.preventDefault();
+    if (!form.title.trim() || !form.dueDate) {
+      pushToast?.({
+        kind: "error",
+        message: lang === "en" ? "Title and due date are required." : "标题和截止日期为必填项。",
+      });
+      return;
+    }
+    try {
+      const r = await createMilestone({
+        variables: {
+          projectId: Number(project.id),
+          title: form.title.trim(),
+          dueDate: form.dueDate,
+          phase: form.phase || null,
+        },
+      });
+      if (r?.data?.createMilestone?.success) {
+        pushToast?.({
+          kind: "success",
+          message: lang === "en" ? "Milestone added." : "里程碑已添加。",
+        });
+        setForm({ title: "", dueDate: "", phase: "" });
+        await refetch();
+      } else {
+        throw new Error(r?.data?.createMilestone?.message || "Failed");
+      }
+    } catch (err) {
+      pushToast?.({ kind: "error", message: err?.message || "Network error" });
+    }
+  }
+
+  async function handleStatusChange(milestone, status) {
+    setBusyId(milestone.id);
+    try {
+      const r = await updateMilestone({
+        variables: { id: Number(milestone.id), status },
+      });
+      if (r?.data?.updateMilestone?.success) {
+        pushToast?.({
+          kind: "success",
+          message: lang === "en" ? "Milestone updated." : "里程碑已更新。",
+        });
+        await refetch();
+      } else {
+        throw new Error(r?.data?.updateMilestone?.message || "Failed");
+      }
+    } catch (err) {
+      pushToast?.({ kind: "error", message: err?.message || "Network error" });
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleDelete(milestone) {
+    if (!window.confirm(labels.confirmDelete)) return;
+    setBusyId(milestone.id);
+    try {
+      const r = await deleteMilestone({ variables: { id: Number(milestone.id) } });
+      if (r?.data?.deleteMilestone?.success) {
+        pushToast?.({
+          kind: "success",
+          message: lang === "en" ? "Milestone deleted." : "里程碑已删除。",
+        });
+        await refetch();
+      } else {
+        throw new Error(r?.data?.deleteMilestone?.message || "Failed");
+      }
+    } catch (err) {
+      pushToast?.({ kind: "error", message: err?.message || "Network error" });
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  return (
+    <div className="drawer-tabpanel">
+      <div className="drawer-tabpanel-head">
+        <h3>{labels.title}</h3>
+        <p>{labels.sub}</p>
+      </div>
+
+      <form className="manage-add-row" onSubmit={handleAdd}>
+        <input
+          type="text"
+          placeholder={labels.nameField}
+          value={form.title}
+          onChange={(e) => setForm({ ...form, title: e.target.value })}
+          required
+        />
+        <input
+          type="date"
+          value={form.dueDate}
+          onChange={(e) => setForm({ ...form, dueDate: e.target.value })}
+          required
+        />
+        <input
+          type="text"
+          placeholder={labels.phaseField}
+          value={form.phase}
+          onChange={(e) => setForm({ ...form, phase: e.target.value })}
+        />
+        <button
+          type="submit"
+          className="pc-btn pc-btn--primary"
+          disabled={creating}
+        >
+          {creating ? labels.adding : labels.add}
+        </button>
+      </form>
+
+      {loading && milestones.length === 0 && (
+        <p className="panel-copy">{labels.loading}</p>
+      )}
+      {error && <p className="panel-copy field-error">{labels.error}</p>}
+      {!loading && milestones.length === 0 && (
+        <p className="panel-copy">{labels.empty}</p>
+      )}
+
+      <ul className="manage-list">
+        {orderedMilestones.map((m, index) => {
+          const overdue = m.dueDate && m.dueDate < today && m.status !== "completed";
+          const busy = busyId === m.id;
+          return (
+            <li key={m.id} className={`manage-item ${overdue ? "manage-item--risk" : ""}`}>
+              <div className="manage-item-main">
+                <div className="manage-item-title">{m.title}</div>
+                <div className="manage-item-meta">
+                  <span>{m.dueDate}</span>
+                  {m.phase && <span>· {m.phase}</span>}
+                  {overdue && (
+                    <span className="chip chip--warn">{labels.overdue}</span>
+                  )}
+                </div>
+              </div>
+              <div className="manage-item-actions">
+                <button
+                  type="button"
+                  className="icon-btn"
+                  onClick={() => moveMilestone(m.id, "up")}
+                  disabled={busy || index === 0}
+                  title={labels.up}
+                  aria-label={labels.up}
+                >
+                  ↑
+                </button>
+                <button
+                  type="button"
+                  className="icon-btn"
+                  onClick={() => moveMilestone(m.id, "down")}
+                  disabled={busy || index === orderedMilestones.length - 1}
+                  title={labels.down}
+                  aria-label={labels.down}
+                >
+                  ↓
+                </button>
+                <select
+                  value={m.status}
+                  onChange={(e) => handleStatusChange(m, e.target.value)}
+                  disabled={busy}
+                  className={`status-select status-select--${m.status}`}
+                  aria-label={lang === "en" ? "Status" : "状态"}
+                >
+                  {MILESTONE_STATUSES.map((s) => (
+                    <option key={s} value={s}>{statusMap[s]}</option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  className="icon-btn icon-btn--danger"
+                  onClick={() => handleDelete(m)}
+                  disabled={busy}
+                  title={labels.delete}
+                  aria-label={labels.delete}
+                >
+                  <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+                    <path fill="currentColor" d="M9 3h6l1 2h4v2H4V5h4l1-2zm-2 6h10l-1 11a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2L7 9z"/>
+                  </svg>
+                </button>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
+function TeamTab({ project, lang, pushToast }) {
+  const { data, loading, error, refetch } = useQuery(GET_PROJECT_MANAGEMENT, {
+    variables: { id: Number(project.id) },
+    fetchPolicy: "cache-and-network",
+  });
+  const [searchUsers, { data: searchData, loading: searching }] = useLazyQuery(SEARCH_USERS, {
+    fetchPolicy: "no-cache",
+  });
+  const [assignMember, { loading: assigning }] = useMutation(ASSIGN_TEAM_MEMBER);
+  const [removeMember] = useMutation(REMOVE_TEAM_MEMBER);
+
+  const [query, setQuery] = useState("");
+  const [picked, setPicked] = useState(null);
+  const [role, setRole] = useState("");
+  const [responsibility, setResponsibility] = useState("");
+  const [busyId, setBusyId] = useState(null);
+
+  // Debounced search.
+  useEffect(() => {
+    if (picked) return;
+    if (query.trim().length < 2) return;
+    const h = setTimeout(() => {
+      searchUsers({ variables: { query: query.trim(), limit: 8 } });
+    }, 250);
+    return () => clearTimeout(h);
+  }, [query, picked, searchUsers]);
+
+  const labels = lang === "en"
+    ? {
+        title: "Team",
+        sub: "Assign members and define their roles on this project.",
+        searchPlaceholder: "Search users by name, login, or email…",
+        roleField: "Role (e.g. Project Manager)",
+        respField: "Responsibility (optional)",
+        addBtn: "Assign",
+        adding: "Assigning…",
+        empty: "No team members yet. Search above to assign someone.",
+        loading: "Loading team…",
+        error: "Unable to load team.",
+        remove: "Remove",
+        confirmRemove: "Remove this team member?",
+        searching: "Searching…",
+        noResults: "No users found.",
+        clear: "Clear",
+      }
+    : {
+        title: "团队",
+        sub: "为此项目分配成员并定义其角色。",
+        searchPlaceholder: "按姓名、用户名或邮箱搜索…",
+        roleField: "角色（如项目经理）",
+        respField: "职责（可选）",
+        addBtn: "分配",
+        adding: "分配中…",
+        empty: "暂无团队成员。在上方搜索以分配某人。",
+        loading: "加载中…",
+        error: "无法加载团队。",
+        remove: "移除",
+        confirmRemove: "移除此团队成员？",
+        searching: "搜索中…",
+        noResults: "未找到用户。",
+        clear: "清除",
+      };
+
+  const team = data?.project?.team || [];
+  const results = searchData?.searchUsers || [];
+
+  async function handleAssign(e) {
+    e.preventDefault();
+    if (!picked) {
+      pushToast?.({
+        kind: "error",
+        message: lang === "en" ? "Please select a user first." : "请先选择用户。",
+      });
+      return;
+    }
+    try {
+      const r = await assignMember({
+        variables: {
+          projectId: Number(project.id),
+          userId: Number(picked.id),
+          role: role.trim() || null,
+          responsibility: responsibility.trim() || null,
+        },
+      });
+      if (r?.data?.assignTeamMember?.success) {
+        pushToast?.({
+          kind: "success",
+          message: lang === "en"
+            ? `Assigned ${picked.displayName || picked.userLogin}`
+            : `已分配 ${picked.displayName || picked.userLogin}`,
+        });
+        setPicked(null);
+        setQuery("");
+        setRole("");
+        setResponsibility("");
+        await refetch();
+      } else {
+        throw new Error(r?.data?.assignTeamMember?.message || "Failed");
+      }
+    } catch (err) {
+      pushToast?.({ kind: "error", message: err?.message || "Network error" });
+    }
+  }
+
+  async function handleRemove(member) {
+    if (!window.confirm(labels.confirmRemove)) return;
+    setBusyId(member.userId);
+    try {
+      const r = await removeMember({
+        variables: { projectId: Number(project.id), userId: Number(member.userId) },
+      });
+      if (r?.data?.removeTeamMember?.success) {
+        pushToast?.({
+          kind: "success",
+          message: lang === "en" ? "Member removed." : "成员已移除。",
+        });
+        await refetch();
+      } else {
+        throw new Error(r?.data?.removeTeamMember?.message || "Failed");
+      }
+    } catch (err) {
+      pushToast?.({ kind: "error", message: err?.message || "Network error" });
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  function getInitials(name) {
+    const safe = (name || "?").trim();
+    return safe.split(/\s+/).slice(0, 2).map((s) => s[0]).join("").toUpperCase() || "?";
+  }
+
+  return (
+    <div className="drawer-tabpanel">
+      <div className="drawer-tabpanel-head">
+        <h3>{labels.title}</h3>
+        <p>{labels.sub}</p>
+      </div>
+
+      <form className="manage-team-form" onSubmit={handleAssign}>
+        {picked ? (
+          <div className="picked-user">
+            <span className="picked-user-avatar">{getInitials(picked.displayName)}</span>
+            <div>
+              <strong>{picked.displayName || picked.userLogin}</strong>
+              <div className="picked-user-sub">{picked.userEmail}</div>
+            </div>
+            <button
+              type="button"
+              className="icon-btn"
+              onClick={() => setPicked(null)}
+              aria-label={labels.clear}
+            >
+              ×
+            </button>
+          </div>
+        ) : (
+          <div className="user-search">
+            <input
+              type="search"
+              placeholder={labels.searchPlaceholder}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              autoComplete="off"
+            />
+            {query.trim().length >= 2 && (
+              <div className="user-search-results">
+                {searching && (
+                  <div className="user-search-empty">{labels.searching}</div>
+                )}
+                {!searching && results.length === 0 && (
+                  <div className="user-search-empty">{labels.noResults}</div>
+                )}
+                {results.map((u) => (
+                  <button
+                    type="button"
+                    key={u.id}
+                    className="user-search-item"
+                    onClick={() => setPicked(u)}
+                  >
+                    <span className="picked-user-avatar">
+                      {getInitials(u.displayName)}
+                    </span>
+                    <span>
+                      <strong>{u.displayName || u.userLogin}</strong>
+                      <small>{u.userEmail}</small>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="field-grid">
+          <input
+            type="text"
+            placeholder={labels.roleField}
+            value={role}
+            onChange={(e) => setRole(e.target.value)}
+          />
+          <input
+            type="text"
+            placeholder={labels.respField}
+            value={responsibility}
+            onChange={(e) => setResponsibility(e.target.value)}
+          />
+        </div>
+
+        <button
+          type="submit"
+          className="pc-btn pc-btn--primary"
+          disabled={assigning || !picked}
+        >
+          {assigning ? labels.adding : labels.addBtn}
+        </button>
+      </form>
+
+      {loading && team.length === 0 && (
+        <p className="panel-copy">{labels.loading}</p>
+      )}
+      {error && <p className="panel-copy field-error">{labels.error}</p>}
+      {!loading && team.length === 0 && (
+        <p className="panel-copy">{labels.empty}</p>
+      )}
+
+      <ul className="manage-list">
+        {team.map((m) => {
+          const busy = busyId === m.userId;
+          return (
+            <li key={m.id} className="manage-item">
+              <span className="picked-user-avatar">
+                {getInitials(m.displayName || m.userLogin)}
+              </span>
+              <div className="manage-item-main">
+                <div className="manage-item-title">
+                  {m.displayName || m.userLogin}
+                </div>
+                <div className="manage-item-meta">
+                  {m.role && <span>{m.role}</span>}
+                  {m.responsibility && <span>· {m.responsibility}</span>}
+                  {!m.role && !m.responsibility && (
+                    <span className="text-muted">{m.userEmail}</span>
+                  )}
+                </div>
+              </div>
+              <div className="manage-item-actions">
+                <button
+                  type="button"
+                  className="icon-btn icon-btn--danger"
+                  onClick={() => handleRemove(m)}
+                  disabled={busy}
+                  title={labels.remove}
+                  aria-label={labels.remove}
+                >
+                  <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+                    <path fill="currentColor" d="M9 3h6l1 2h4v2H4V5h4l1-2zm-2 6h10l-1 11a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2L7 9z"/>
+                  </svg>
+                </button>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
+function DocumentsTab({ project, lang, pushToast }) {
+  const { data, loading, error, refetch } = useQuery(GET_PROJECT_MANAGEMENT, {
+    variables: { id: Number(project.id) },
+    fetchPolicy: "cache-and-network",
+  });
+  const [createDocument, { loading: creating }] = useMutation(CREATE_PROJECT_DOCUMENT);
+  const [updateDocument] = useMutation(UPDATE_PROJECT_DOCUMENT);
+  const [deleteDocument] = useMutation(DELETE_PROJECT_DOCUMENT);
+  const [busyId, setBusyId] = useState(null);
+  const [form, setForm] = useState({
+    title: "",
+    fileUrl: "",
+    documentType: "other",
+    version: "1.0",
+  });
+
+  const labels = lang === "en"
+    ? {
+        title: "Documents",
+        sub: "Track project documents, links, and approval status.",
+        add: "Add document",
+        adding: "Adding…",
+        nameField: "Title",
+        urlField: "URL",
+        typeField: "Type",
+        versionField: "Version",
+        empty: "No documents yet.",
+        loading: "Loading documents…",
+        error: "Unable to load documents.",
+        remove: "Delete",
+        open: "Open",
+        confirmDelete: "Delete this document?",
+      }
+    : {
+        title: "文档",
+        sub: "跟踪项目文档、链接与审批状态。",
+        add: "添加文档",
+        adding: "添加中…",
+        nameField: "标题",
+        urlField: "链接",
+        typeField: "类型",
+        versionField: "版本",
+        empty: "暂无文档。",
+        loading: "加载文档中…",
+        error: "无法加载文档。",
+        remove: "删除",
+        open: "打开",
+        confirmDelete: "删除此文档？",
+      };
+
+  const statusLabels = lang === "en"
+    ? { draft: "Draft", approved: "Approved", archived: "Archived" }
+    : { draft: "草稿", approved: "已批准", archived: "已归档" };
+
+  const documents = data?.project?.documents || [];
+
+  async function handleAdd(e) {
+    e.preventDefault();
+    if (!form.title.trim()) {
+      pushToast?.({
+        kind: "error",
+        message: lang === "en" ? "Document title is required." : "文档标题为必填项。",
+      });
+      return;
+    }
+    try {
+      const result = await createDocument({
+        variables: {
+          projectId: Number(project.id),
+          title: form.title.trim(),
+          fileUrl: form.fileUrl.trim() || null,
+          documentType: form.documentType,
+          version: form.version.trim() || "1.0",
+          status: "draft",
+        },
+      });
+      if (!result?.data?.createProjectDocument?.success) {
+        throw new Error(result?.data?.createProjectDocument?.message || "Failed");
+      }
+      pushToast?.({
+        kind: "success",
+        message: lang === "en" ? "Document created." : "文档已创建。",
+      });
+      setForm({ title: "", fileUrl: "", documentType: "other", version: "1.0" });
+      await refetch();
+    } catch (err) {
+      pushToast?.({ kind: "error", message: err?.message || "Network error" });
+    }
+  }
+
+  async function handleStatus(doc, status) {
+    setBusyId(doc.id);
+    try {
+      const result = await updateDocument({
+        variables: { id: Number(doc.id), status },
+      });
+      if (!result?.data?.updateProjectDocument?.success) {
+        throw new Error(result?.data?.updateProjectDocument?.message || "Failed");
+      }
+      await refetch();
+    } catch (err) {
+      pushToast?.({ kind: "error", message: err?.message || "Network error" });
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleDelete(doc) {
+    if (!window.confirm(labels.confirmDelete)) return;
+    setBusyId(doc.id);
+    try {
+      const result = await deleteDocument({ variables: { id: Number(doc.id) } });
+      if (!result?.data?.deleteProjectDocument?.success) {
+        throw new Error(result?.data?.deleteProjectDocument?.message || "Failed");
+      }
+      pushToast?.({ kind: "success", message: lang === "en" ? "Document deleted." : "文档已删除。" });
+      await refetch();
+    } catch (err) {
+      pushToast?.({ kind: "error", message: err?.message || "Network error" });
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  return (
+    <div className="drawer-tabpanel">
+      <div className="drawer-tabpanel-head">
+        <h3>{labels.title}</h3>
+        <p>{labels.sub}</p>
+      </div>
+
+      <form className="manage-add-row manage-add-row--docs" onSubmit={handleAdd}>
+        <input
+          type="text"
+          placeholder={labels.nameField}
+          value={form.title}
+          onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
+          required
+        />
+        <input
+          type="url"
+          placeholder={labels.urlField}
+          value={form.fileUrl}
+          onChange={(e) => setForm((prev) => ({ ...prev, fileUrl: e.target.value }))}
+        />
+        <input
+          type="text"
+          placeholder={labels.typeField}
+          value={form.documentType}
+          onChange={(e) => setForm((prev) => ({ ...prev, documentType: e.target.value }))}
+        />
+        <input
+          type="text"
+          placeholder={labels.versionField}
+          value={form.version}
+          onChange={(e) => setForm((prev) => ({ ...prev, version: e.target.value }))}
+        />
+        <button type="submit" className="pc-btn pc-btn--primary" disabled={creating}>
+          {creating ? labels.adding : labels.add}
+        </button>
+      </form>
+
+      {loading && documents.length === 0 && <p className="panel-copy">{labels.loading}</p>}
+      {error && <p className="panel-copy field-error">{labels.error}</p>}
+      {!loading && documents.length === 0 && <p className="panel-copy">{labels.empty}</p>}
+
+      <ul className="manage-list">
+        {documents.map((doc) => {
+          const busy = busyId === doc.id;
+          return (
+            <li key={doc.id} className="manage-item">
+              <div className="manage-item-main">
+                <div className="manage-item-title">{doc.title}</div>
+                <div className="manage-item-meta">
+                  <span>{doc.documentType || "other"}</span>
+                  <span>· v{doc.version || "1.0"}</span>
+                  {doc.fileUrl && <span className="text-muted">· {doc.fileUrl}</span>}
+                </div>
+              </div>
+              <div className="manage-item-actions">
+                <select
+                  value={doc.status || "draft"}
+                  onChange={(e) => handleStatus(doc, e.target.value)}
+                  disabled={busy}
+                  className={`status-select status-select--${doc.status || "draft"}`}
+                >
+                  {Object.keys(statusLabels).map((status) => (
+                    <option key={status} value={status}>{statusLabels[status]}</option>
+                  ))}
+                </select>
+                {doc.fileUrl && (
+                  <a
+                    href={doc.fileUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="icon-btn"
+                    aria-label={labels.open}
+                    title={labels.open}
+                  >
+                    ↗
+                  </a>
+                )}
+                <button
+                  type="button"
+                  className="icon-btn icon-btn--danger"
+                  onClick={() => handleDelete(doc)}
+                  disabled={busy}
+                  aria-label={labels.remove}
+                  title={labels.remove}
+                >
+                  <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+                    <path fill="currentColor" d="M9 3h6l1 2h4v2H4V5h4l1-2zm-2 6h10l-1 11a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2L7 9z"/>
+                  </svg>
+                </button>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
 export default function App() {
   const [lang, setLang] = useState("en");
   const [activeNav, setActiveNav] = useState("dashboard");
@@ -671,7 +2704,59 @@ export default function App() {
   const [loginPassword, setLoginPassword] = useState("");
   const [loginBusy, setLoginBusy] = useState(false);
   const [loginError, setLoginError] = useState("");
+  const [currentUser, setCurrentUser] = useState(null);
+  const [capabilities, setCapabilities] = useState(null);
   const [selectedProject, setSelectedProject] = useState(null);
+  const [editingProject, setEditingProject] = useState(null);
+  const [showNewProject, setShowNewProject] = useState(false);
+  const [toasts, setToasts] = useState([]);
+  const [quickStatusBusyId, setQuickStatusBusyId] = useState(null);
+  const [quickUpdateProject] = useMutation(UPDATE_PROJECT);
+  const [createProjectMutation] = useMutation(CREATE_PROJECT);
+
+  const pushToast = (toast) => {
+    const id = Math.random().toString(36).slice(2);
+    const next = { id, kind: "info", ...toast };
+    setToasts((prev) => [...prev, next]);
+    const ttl = next.kind === "error" ? 6000 : 3500;
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, ttl);
+  };
+  const dismissToast = (id) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  };
+
+  async function handleQuickStatusChange(project, nextStatus) {
+    if (!project?.id || !nextStatus || nextStatus === project.status) return;
+    setQuickStatusBusyId(project.id);
+    try {
+      const result = await quickUpdateProject({
+        variables: { id: Number(project.id), status: nextStatus },
+        refetchQueries: [{ query: GET_PROJECTS }],
+        awaitRefetchQueries: true,
+      });
+      const payload = result?.data?.updateProject;
+      if (!payload?.success) {
+        throw new Error(payload?.message || "Status update failed");
+      }
+      if (selectedProject && Number(selectedProject.id) === Number(project.id)) {
+        setSelectedProject(payload.project);
+      }
+      if (editingProject && Number(editingProject.id) === Number(project.id)) {
+        setEditingProject(payload.project);
+      }
+      pushToast({
+        kind: "success",
+        message: lang === "en" ? "Status updated." : "状态已更新。",
+      });
+    } catch (err) {
+      pushToast({ kind: "error", message: err?.message || "Network error" });
+    } finally {
+      setQuickStatusBusyId(null);
+    }
+  }
+
   const t = COPY[lang];
   const landing = LANDING_CONTENT[lang] || LANDING_CONTENT.en;
   const isPortfolioView = activeNav === "projects" || activeNav === "dashboard";
@@ -683,6 +2768,14 @@ export default function App() {
   const hasLiveProjects = projects.length > 0;
   const displayProjects = hasLiveProjects ? projects : DEMO_PROJECTS;
   const isLoggedIn = Boolean(apiToken.trim());
+  const canEditProjects = Boolean(
+    capabilities?.admin ||
+    capabilities?.manageProjects ||
+    capabilities?.createProjects ||
+    currentUser?.roles?.includes('administrator') ||
+    currentUser?.roles?.includes('construction_director') ||
+    currentUser?.roles?.includes('construction_project_manager')
+  );
   const protectedNavIds = ["dashboard", "projects", "suppliers", "employees", "finance", "reports", "docs", "entries"];
   const requiresLogin = protectedNavIds.includes(activeNav);
   const isDemoMode = !loading && !hasLiveProjects;
@@ -694,6 +2787,13 @@ export default function App() {
   useEffect(() => {
     const existingToken = getStoredAuthToken();
     setApiToken(existingToken);
+    if (existingToken) {
+      const storedUser = getStoredUser();
+      setCurrentUser(storedUser);
+      if (storedUser && storedUser.__capabilities) {
+        setCapabilities(storedUser.__capabilities);
+      }
+    }
   }, []);
 
   function handleSaveToken() {
@@ -713,7 +2813,10 @@ export default function App() {
 
   function handleClearToken() {
     clearStoredAuthToken();
+    clearStoredUser();
     setApiToken("");
+    setCurrentUser(null);
+    setCapabilities(null);
     setTokenState("cleared");
     apolloClient.resetStore().catch(() => {});
   }
@@ -750,6 +2853,15 @@ export default function App() {
       setStoredAuthToken(payload.token);
       setApiToken(payload.token);
       setTokenState("saved");
+      if (payload.user && typeof payload.user === "object") {
+        const enrichedUser = {
+          ...payload.user,
+          __capabilities: payload.capabilities || null,
+        };
+        setStoredUser(enrichedUser);
+        setCurrentUser(enrichedUser);
+        setCapabilities(payload.capabilities || null);
+      }
       setLoginPassword("");
       setActiveNav("dashboard");
       apolloClient.resetStore().catch(() => {});
@@ -885,15 +2997,6 @@ export default function App() {
     );
   }
 
-  // Derive admin manage URL for a project row ID
-  function getManageUrl(projectId) {
-    const base =
-      typeof window !== "undefined" && window.jinsing?.adminUrl
-        ? window.jinsing.adminUrl
-        : "/wp-admin/";
-    return `${base}admin.php?page=construction-mgmt-project-management&id=${projectId}`;
-  }
-
   // Derive public view URL for a project (CPT post)
   function getViewUrl(project) {
     if (project?.publicUrl) return project.publicUrl;
@@ -903,13 +3006,75 @@ export default function App() {
     return null;
   }
 
-  function ProjectCard({ project, onDetail }) {
+  function getManageUrl(projectId) {
+    const base =
+      typeof window !== "undefined" && window.jinsing?.adminUrl
+        ? window.jinsing.adminUrl
+        : "/wp-admin/";
+    return `${base}admin.php?page=construction-mgmt-project-management&id=${projectId}`;
+  }
+
+  function openManageProject(project, options = {}) {
+    if (!project?.id) return;
+    if (options.closeDetail) {
+      setSelectedProject(null);
+    }
+    setEditingProject(project);
+
+    if (typeof window === "undefined") return;
+
+    window.setTimeout(() => {
+      const drawerOpen = Boolean(document.querySelector(".drawer-overlay"));
+      if (drawerOpen) return;
+
+      const manageUrl = getManageUrl(project.id);
+      window.open(manageUrl, "_blank", "noopener,noreferrer");
+      pushToast({
+        kind: "info",
+        message:
+          lang === "en"
+            ? "Opened classic admin manager as fallback."
+            : "已回退到经典后台管理页面。",
+      });
+    }, 350);
+  }
+
+  async function handleCreateProject(fields) {
+    try {
+      const result = await createProjectMutation({
+        variables: {
+          name: fields.name.trim(),
+          description: fields.description?.trim() || "",
+          budgetTotal: fields.budgetTotal ? parseFloat(fields.budgetTotal) : 0,
+        },
+        refetchQueries: [{ query: GET_PROJECTS }],
+        awaitRefetchQueries: true,
+      });
+      const newProject = result?.data?.createProject?.project;
+      setShowNewProject(false);
+      pushToast({
+        kind: "success",
+        message: lang === "en" ? `Project "${fields.name}" created.` : `项目"${fields.name}"已创建。`,
+      });
+      if (newProject) {
+        openManageProject(newProject);
+      }
+    } catch (err) {
+      pushToast({
+        kind: "error",
+        message: lang === "en"
+          ? `Failed to create project: ${err.message}`
+          : `创建项目失败：${err.message}`,
+      });
+    }
+  }
+
+  function ProjectCard({ project, onDetail, onManage, canManage }) {
     const health = getProjectHealth(project);
     const healthLabel = { risk: t.ui.atRisk, watch: t.ui.watch, healthy: t.ui.healthy }[health.tone] ?? health.label;
     const actionRequired = project.milestones.some(
       (ms) => ms.status !== "completed" && new Date(ms.dueDate) < new Date()
     );
-    const manageUrl = getManageUrl(project.id);
     const statusLabel = t.ui.status[project.status] ?? project.status.replace(/_/g, " ");
 
     return (
@@ -947,25 +3112,25 @@ export default function App() {
           >
             {t.ui.viewProject}
           </button>
-          <a
-            href={manageUrl}
-            className="pc-btn pc-btn--secondary"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {t.ui.manageProject}
-          </a>
+          {canManage && (
+            <button
+              type="button"
+              className="pc-btn pc-btn--secondary"
+              onClick={() => onManage?.(project)}
+            >
+              {t.ui.manageProject}
+            </button>
+          )}
         </div>
       </div>
     );
   }
 
-  function ProjectDetailPanel({ project, onClose }) {
+  function ProjectDetailPanel({ project, onClose, onManage, canManage }) {
     if (!project) return null;
     const health = getProjectHealth(project);
     const healthLabel = { risk: t.ui.atRisk, watch: t.ui.watch, healthy: t.ui.healthy }[health.tone] ?? health.label;
     const viewUrl = getViewUrl(project);
-    const manageUrl = getManageUrl(project.id);
     const msTotal = project.milestones.length;
     const msDone  = project.milestones.filter((m) => m.status === "completed").length;
     const statusLabel = t.ui.status[project.status] ?? project.status.replace(/_/g, " ");
@@ -1051,10 +3216,15 @@ export default function App() {
                 {t.ui.viewPublicPage}
               </a>
             )}
-            <a href={manageUrl} target="_blank" rel="noopener noreferrer"
-              className="pc-btn pc-btn--secondary pd-action-btn">
-              {t.ui.manageProject} \u2197
-            </a>
+            {canManage && (
+              <button
+                type="button"
+                className="pc-btn pc-btn--secondary pd-action-btn"
+                onClick={() => onManage?.(project)}
+              >
+                {t.ui.manageProject}
+              </button>
+            )}
             <button type="button" className="pc-btn pc-btn--ghost pd-action-btn" onClick={onClose}>
               {t.ui.close}
             </button>
@@ -1064,7 +3234,7 @@ export default function App() {
     );
   }
 
-  function ProjectGrid({ projects }) {
+  function ProjectGrid({ projects, onManage, canManage }) {
     return (
       <div className="project-grid">
         {projects.map((project) => (
@@ -1072,6 +3242,8 @@ export default function App() {
             key={project.id}
             project={project}
             onDetail={setSelectedProject}
+            onManage={onManage}
+            canManage={canManage}
           />
         ))}
       </div>
@@ -1110,6 +3282,13 @@ export default function App() {
 
         <div className="dashboard-shell">
           <div className="language-row">
+            {isLoggedIn && (
+              <UserBadge
+                user={currentUser}
+                lang={lang}
+                onLogout={handleClearToken}
+              />
+            )}
             <span className="language-label">{t.languageLabel}</span>
             <div className="language-switch" role="group" aria-label={t.languageLabel}>
               <button
@@ -1129,10 +3308,28 @@ export default function App() {
             </div>
           </div>
 
-          {activeNav === "dashboard" && (
+          {activeNav === "dashboard" && isLoggedIn && (
+            <LoggedInDashboard
+              user={currentUser}
+              lang={lang}
+              loading={loading}
+              error={error}
+              projects={displayProjects}
+              isDemoMode={isDemoMode}
+              canEditProjects={canEditProjects}
+              onOpenProject={setSelectedProject}
+              onEditProject={openManageProject}
+              onQuickStatusChange={handleQuickStatusChange}
+              quickStatusBusyId={quickStatusBusyId}
+              getViewUrl={getViewUrl}
+              t={t}
+            />
+          )}
+
+          {activeNav === "dashboard" && !isLoggedIn && (
             <section className="gated-panel">
-              {!isLoggedIn && requiresLogin && <LoginRequiredOverlay />}
-              <div className={!isLoggedIn && requiresLogin ? "gated-blur" : undefined}>
+              {requiresLogin && <LoginRequiredOverlay />}
+              <div className={requiresLogin ? "gated-blur" : undefined}>
               {/* Topbar */}
               <section className="lp-topbar panel">
                 <div className="lp-brand">
@@ -1217,8 +3414,26 @@ export default function App() {
             <ProjectDetailPanel
               project={selectedProject}
               onClose={() => setSelectedProject(null)}
+              onManage={(project) => openManageProject(project, { closeDetail: true })}
+              canManage={canEditProjects}
             />
           )}
+
+          {editingProject && (
+            <EditProjectDrawer
+              project={editingProject}
+              lang={lang}
+              onClose={() => setEditingProject(null)}
+              onSaved={(updated) => {
+                if (selectedProject && updated && selectedProject.id === updated.id) {
+                  setSelectedProject(updated);
+                }
+              }}
+              pushToast={pushToast}
+            />
+          )}
+
+          <ToastStack toasts={toasts} onDismiss={dismissToast} />
 
           {activeNav === "projects" && (
             <section className="panel panel-spacer gated-panel">
@@ -1230,7 +3445,11 @@ export default function App() {
               </div>
               <p className="panel-copy">{pageBlurb}</p>
 
-              <ProjectGrid projects={displayProjects} />
+              <ProjectGrid
+                projects={displayProjects}
+                onManage={openManageProject}
+                canManage={canEditProjects}
+              />
               <DocumentView documents={[
                 { id: 1, name: t.ui.docNames[0], url: "/docs/report.pdf" },
                 { id: 2, name: t.ui.docNames[1], url: "/docs/license.pdf" },

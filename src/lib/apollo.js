@@ -23,6 +23,40 @@ function getDefaultGraphQLEndpoint() {
 const GRAPHQL_ENDPOINT = import.meta.env.VITE_GRAPHQL_ENDPOINT || getDefaultGraphQLEndpoint();
 
 const GRAPHQL_JWT_KEY = "jeea_graphql_jwt";
+const JINSING_USER_KEY = "jeea_current_user";
+
+function getStoredUser() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    const raw = window.localStorage.getItem(JINSING_USER_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (_error) {
+    return null;
+  }
+}
+
+function setStoredUser(user) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  if (user && typeof user === "object") {
+    try {
+      window.localStorage.setItem(JINSING_USER_KEY, JSON.stringify(user));
+    } catch (_error) {
+      /* ignore quota / serialization errors */
+    }
+  } else {
+    window.localStorage.removeItem(JINSING_USER_KEY);
+  }
+}
+
+function clearStoredUser() {
+  setStoredUser(null);
+}
 
 function getStoredAuthToken() {
   if (typeof window === "undefined") {
@@ -69,5 +103,15 @@ const apolloClient = new ApolloClient({
   cache: new InMemoryCache(),
 });
 
-export { GRAPHQL_ENDPOINT, GRAPHQL_JWT_KEY, clearStoredAuthToken, getStoredAuthToken, setStoredAuthToken };
+export {
+  GRAPHQL_ENDPOINT,
+  GRAPHQL_JWT_KEY,
+  JINSING_USER_KEY,
+  clearStoredAuthToken,
+  clearStoredUser,
+  getStoredAuthToken,
+  getStoredUser,
+  setStoredAuthToken,
+  setStoredUser,
+};
 export default apolloClient;
